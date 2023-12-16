@@ -83,6 +83,17 @@ But you're heavy encouraged to code your business logic too.
 
 Vecna already come with a solid set of log needed to debug and monitor and with a basic interface `Metric` which recommended use is with prometheus. If you don't want to use metrics now, just use the `metrics.TODO` provided.
 
+You can use the `metrics.PromMetrics`, just instantiate using `metrics.NewPromMetrics()` and register each metric on your prometheus registry.
+
+```
+vecnaMetrics := metrics.NewPromMetrics()
+prometheus.NewRegistry().MustRegister(
+    vecnaMetrics.EnqueuedMsgs,
+    vecnaMetrics.ConsumedMsg
+    ...
+)
+```
+
 The `EnqueuedMessages()` function from `Metric` is useful to monitor how your workers is dealing with data flow, and if some workers need more or less goroutines. To use this metric, is recommended to use the `task.ChannelWatcher` object.
 
 ```go

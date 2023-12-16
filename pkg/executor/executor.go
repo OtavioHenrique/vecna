@@ -63,6 +63,9 @@ func (e *Executor) connectWorkers() map[string]chan *workers.WorkerData {
 			w.Output = ch
 
 			previousWorker = w
+
+			chName := fmt.Sprintf("%s_input", input.Worker.Name())
+			chCreated[chName] = previousWorker.OutputCh()
 		case *workers.ProducerWorker:
 			w := input.Worker.(*workers.ProducerWorker)
 
@@ -73,10 +76,10 @@ func (e *Executor) connectWorkers() map[string]chan *workers.WorkerData {
 
 			w.Input = previousWorker.OutputCh()
 			previousWorker = w
-		}
 
-		chName := fmt.Sprintf("%s_input", input.Worker.Name())
-		chCreated[chName] = ch
+			chName := fmt.Sprintf("%s_input", input.Worker.Name())
+			chCreated[chName] = previousWorker.OutputCh()
+		}
 	}
 
 	return chCreated

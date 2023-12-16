@@ -20,6 +20,8 @@ type Metric interface {
 	TaskSuccess(workerName string)
 	// TaskRun will be called everytime that a worker calls a task
 	TaskRun(workerName string)
+	// TaskExecutionTime to measure task execution time in milliseconds
+	TaskExecutionTime(workerName string, start time.Time, end time.Time)
 }
 
 // ChannelWatcher is a simply Object who will watch all given queues (channels)
@@ -73,6 +75,8 @@ func (m *TODO) TaskSuccess(workerName string) {}
 
 func (m *TODO) TaskRun(workerName string) {}
 
+func (m *TODO) TaskExecutionTime(workerName string, start time.Time, end time.Time) {}
+
 // MockMetric append metrics on maps. Don't use it on production environmnets.
 type MockMetric struct {
 	EnqueuedMessagesCalled map[string]int
@@ -81,6 +85,7 @@ type MockMetric struct {
 	TaskErrorCalled        map[string]int
 	TaskSuccessCalled      map[string]int
 	TaskRunCalled          map[string]int
+	taskExecutionTime      map[string]float64
 	Lock                   sync.RWMutex
 }
 
@@ -93,9 +98,17 @@ func NewMockMetrics() *MockMetric {
 	m.TaskErrorCalled = map[string]int{}
 	m.TaskSuccessCalled = map[string]int{}
 	m.TaskRunCalled = map[string]int{}
+	m.taskExecutionTime = map[string]float64{}
 	m.Lock = sync.RWMutex{}
 
 	return m
+}
+
+func (m *MockMetric) TaskExecutionTime(workerName string, start time.Time, end time.Time) {
+
+	m.Lock.Lock()
+	m.taskExecutionTime[workerName] = float64(start.Sub(end).Milliseconds())
+	m.Lock.Unlock()
 }
 
 func (m *MockMetric) EnqueuedMessages(msgsNum int, queueName string) {
