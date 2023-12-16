@@ -24,11 +24,10 @@ type ConsumerWorker struct {
 	started   bool
 }
 
-func NewConsumerWorker(name string, inputCh chan *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker {
+func NewConsumerWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker {
 	w := new(ConsumerWorker)
 
 	w.name = name
-	w.Input = inputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -36,6 +35,10 @@ func NewConsumerWorker(name string, inputCh chan *WorkerData, task task.Task, nu
 	w.closeCh = make(chan struct{})
 
 	return w
+}
+
+func (w *ConsumerWorker) Name() string {
+	return w.name
 }
 
 func (w *ConsumerWorker) Started() bool {

@@ -61,13 +61,13 @@ func TestProducerWorker_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := workers.NewProducerWorker(
 				tt.fields.name,
-				tt.fields.Output,
 				tt.fields.task,
 				tt.fields.numWorker,
 				tt.fields.logger,
 				tt.fields.Metrics,
 				tt.fields.ticker,
 			)
+			w.Output = tt.fields.Output
 			w.Start(context.TODO())
 
 			var outputMsgs []*workers.WorkerData

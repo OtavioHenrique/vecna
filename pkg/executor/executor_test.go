@@ -2,13 +2,35 @@ package executor_test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	executor "github.com/otaviohenrique/vecna/pkg/executor"
+	"github.com/otaviohenrique/vecna/pkg/metrics"
+	"github.com/otaviohenrique/vecna/pkg/task"
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
+
+type MockTask struct {
+	CalledWith []string
+	CallCount  int
+	mu         sync.Mutex
+}
+
+func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+
+	t.mu.Lock()
+	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
+	t.CallCount += 1
+	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
+	t.mu.Unlock()
+
+	return &task.TaskData{Data: msg, Metadata: meta}, nil
+}
 
 func TestExecutor_StartWorkers(t *testing.T) {
 	type fields struct {
@@ -25,9 +47,29 @@ func TestExecutor_StartWorkers(t *testing.T) {
 	}{
 		{"It correct start all workers and creates default queues", fields{
 			inputs: []executor.ExecutorInput{
-				{Worker: &MockProWorker{}, QueueSize: 10},
-				{Worker: &MockBiWorker{}, QueueSize: 10},
-				{Worker: &MockConWorker{}, QueueSize: 10}},
+				{Worker: workers.NewProducerWorker(
+					"test-producer",
+					&MockTask{},
+					2,
+					slog.New(slog.NewTextHandler(os.Stdout, nil)),
+					metrics.NewMockMetrics(),
+					500*time.Millisecond,
+				), QueueSize: 10},
+				{Worker: workers.NewBiDirectionalWorker(
+					"test-bidirectional",
+					&MockTask{},
+					2,
+					slog.New(slog.NewTextHandler(os.Stdout, nil)),
+					metrics.NewMockMetrics(),
+				), QueueSize: 10},
+				{Worker: workers.NewConsumerWorker(
+					"test-consumer",
+					&MockTask{},
+					2,
+					slog.New(slog.NewTextHandler(os.Stdout, nil)),
+					metrics.NewMockMetrics(),
+				), QueueSize: 10},
+			},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{ctx: context.TODO()}},
 	}
@@ -37,7 +79,7 @@ func TestExecutor_StartWorkers(t *testing.T) {
 				tt.fields.inputs,
 				tt.fields.logger,
 			)
-			e.StartWorkers(tt.args.ctx)
+			chs := e.StartWorkers(tt.args.ctx)
 
 			var previousWorker workers.Worker
 			for _, input := range tt.fields.inputs {
@@ -48,6 +90,10 @@ func TestExecutor_StartWorkers(t *testing.T) {
 				if previousWorker != nil {
 					if input.Worker.InputCh() != previousWorker.OutputCh() {
 						t.Errorf("Expected input channel to preivous worker output channel. Current worker %s, Previous Worker %s", input.Worker, previousWorker)
+					}
+
+					if chs[input.Worker.Name()] != input.Worker.InputCh() {
+						t.Errorf("Worker channel is not on returned map. Worker %s", input.Worker.Name())
 					}
 				}
 

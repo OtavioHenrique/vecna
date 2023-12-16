@@ -27,12 +27,10 @@ type BiDirectionalWorker struct {
 	started   bool
 }
 
-func NewBiDirectionalWorker(name string, inputCh chan *WorkerData, outputCh chan *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
+func NewBiDirectionalWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
 	w := new(BiDirectionalWorker)
 
 	w.name = name
-	w.Input = inputCh
-	w.Output = outputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -40,6 +38,10 @@ func NewBiDirectionalWorker(name string, inputCh chan *WorkerData, outputCh chan
 	w.closeCh = make(chan struct{})
 
 	return w
+}
+
+func (w *BiDirectionalWorker) Name() string {
+	return w.name
 }
 
 func (w *BiDirectionalWorker) Started() bool {

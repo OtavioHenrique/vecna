@@ -27,11 +27,10 @@ type ProducerWorker struct {
 	started bool
 }
 
-func NewProducerWorker(name string, outputCh chan *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
+func NewProducerWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
 	w := new(ProducerWorker)
 
 	w.name = name
-	w.Output = outputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -40,6 +39,10 @@ func NewProducerWorker(name string, outputCh chan *WorkerData, task task.Task, n
 	w.closeCh = make(chan struct{})
 
 	return w
+}
+
+func (w *ProducerWorker) Name() string {
+	return w.name
 }
 
 func (w *ProducerWorker) Started() bool {

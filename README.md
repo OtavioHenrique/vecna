@@ -8,11 +8,8 @@ Vecna is a tiny library to build high concurrent application easily and focousin
 To use just create your channels (queues), workers and tasks as you want.
 
 ```go
-inputCh := make(chan *workers.WorkerData, 100))
-
 sqsProducer := workers.NewProducerWorker(
-    "Event Created", 
-    inputCh, 
+    "Event Created",
     task.NewSQSConsumer(client, logger, opts),
     10,
     logger,
@@ -20,12 +17,8 @@ sqsProducer := workers.NewProducerWorker(
     time.NewTicker(500 * time.Millisecond)
 )
 
-dataOutputCh := make(chan *workers.WorkerData, 1000)
-
 s3Downloader := workers.NewBidirectionalWorker(
     "Download Data",
-    inputCh,
-    dataOutputCh,
     task.NewS3Downloader(
         client, 
         "bucket", 
@@ -40,7 +33,6 @@ s3Downloader := workers.NewBidirectionalWorker(
 
 businessLogic := workers.NewConsumerWorker(
     "Process Data",
-    dataOutputCh,
     NewSomeBusinessTask(),
     5,
     logger,
@@ -48,14 +40,16 @@ businessLogic := workers.NewConsumerWorker(
 )
 
 executor := executor.NewExecutor(
-    []workers.Worker{
-        sqsProducer,
-        s3Downloader,
-        businessLogic
-    }
+    []executor.ExecutorInput{
+        {Worker: sqsProducer, QueueSize: 10},
+        {Worker: s3Downloader, QueueSize: 10},
+        {Worker: businessLogic, QueueSize: 10},
+    },
+    logger
 )
 
-executor.StartWorkers(context.TODO())
+// StartWorkers return a map with queues info to later be used by channel watcher if needed
+queues := executor.StartWorkers(context.TODO())
 ```
 
 In this example, a simple logic is being made, consume message from SQS, Download object from S3 (Based on SQS Consumer output), and process it with some busines logic (custom Task). 
@@ -93,10 +87,7 @@ The `EnqueuedMessages()` function from `Metric` is useful to monitor how your wo
 
 ```go
 watcher := task.NewChannelWatcher(
-    map[string]interface{}{
-        "sqsInput": inputCh,
-        "s3DownloadedData": dataOutputCh,
-    },
+    queues,
     metric,
     time.NewTicker(10 * time.Second)
 )

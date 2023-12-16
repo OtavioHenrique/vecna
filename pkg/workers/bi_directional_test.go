@@ -47,13 +47,14 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := workers.NewBiDirectionalWorker(
 				tt.fields.name,
-				tt.fields.Input,
-				tt.fields.Output,
 				tt.fields.task,
 				tt.fields.numWorker,
 				tt.fields.logger,
 				tt.fields.Metrics,
 			)
+
+			w.Input = tt.fields.Input
+			w.Output = tt.fields.Output
 
 			w.Start(context.TODO())
 

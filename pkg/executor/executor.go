@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/otaviohenrique/vecna/pkg/workers"
@@ -28,18 +29,24 @@ func NewExecutor(inputs []ExecutorInput, logger *slog.Logger) *Executor {
 	return ex
 }
 
-// Start all executor's workers
-func (e *Executor) StartWorkers(ctx context.Context) {
-	e.connectWorkers()
+// Start all executor's workers and create its queues.
+// Return a map of queues names and queues (channel) to be used by watcher if needed
+func (e *Executor) StartWorkers(ctx context.Context) map[string]chan *workers.WorkerData {
+	queues := e.connectWorkers()
 	e.logger.Info("all workers connected by queues")
 
 	for _, input := range e.inputs {
 		input.Worker.Start(ctx)
 	}
+
+	return queues
 }
 
-func (e *Executor) connectWorkers() {
+func (e *Executor) connectWorkers() map[string]chan *workers.WorkerData {
 	var previousWorker workers.Worker
+
+	chCreated := make(map[string]chan *workers.WorkerData)
+
 	for _, input := range e.inputs {
 		var ch chan *workers.WorkerData
 		if input.Ch != nil {
@@ -64,8 +71,13 @@ func (e *Executor) connectWorkers() {
 		case *workers.ConsumerWorker:
 			w := input.Worker.(*workers.ConsumerWorker)
 
-			w.Input = ch
+			w.Input = previousWorker.OutputCh()
 			previousWorker = w
 		}
+
+		chName := fmt.Sprintf("%s_input", input.Worker.Name())
+		chCreated[chName] = ch
 	}
+
+	return chCreated
 }

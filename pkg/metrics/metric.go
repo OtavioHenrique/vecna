@@ -26,6 +26,7 @@ type Metric interface {
 // and report them calling EnqueuedMessages from Metric
 type ChannelWatcher struct {
 	// Channels A map of key strings (channel name) and value a channel
+	// Can be used with return value from Executor.StartWorkers()
 	Channels map[string]struct{}
 	// Ticker is a channel ticker that will trig the watcher to report metrics
 	// (Recommended time 10 seconds)
