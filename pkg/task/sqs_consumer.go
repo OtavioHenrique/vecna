@@ -72,7 +72,7 @@ func (c *SQSConsumer) visibilityTimeout() int64 {
 
 // Run when called consume messages from SQS and return TaskData with Data containing an array of *SQSConsumerOutput
 // It appends receipt handlers to metadata to be excluded later by user
-func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) (*TaskData, error) {
+func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) (*TaskData[[]*SQSConsumerOutput], error) {
 	msgs, err := c.receiveMessages(c.queueURL)
 
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]inte
 	}
 
 	meta[name] = map[string][]string{"receiptHandlers": receiptsHandler}
-	return &TaskData{Data: messagesOutput, Metadata: meta}, nil
+	return &TaskData[[]*SQSConsumerOutput]{Data: messagesOutput, Metadata: meta}, nil
 }
 
 func (c *SQSConsumer) receiveMessages(queueUrl *string) ([]*sqs.Message, error) {

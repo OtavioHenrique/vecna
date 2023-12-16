@@ -61,7 +61,7 @@ func TestS3Downloader_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *task.TaskData
+		want    *task.TaskData[*task.S3DownloaderOutput]
 		wantErr bool
 	}{
 		{"It correctly take path and downloads it", fields{
@@ -77,7 +77,7 @@ func TestS3Downloader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: S3TaskInput{DataInput{Path: "path/to/file"}},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: "response", Metadata: map[string]interface{}{}}, false},
+		}, &task.TaskData[*task.S3DownloaderOutput]{Data: &task.S3DownloaderOutput{Data: []byte("response")}, Metadata: map[string]interface{}{}}, false},
 		{"It correctly handles download error on download", fields{
 			client:     &mockS3Client{ExpectedResponse: "response", BucketName: "bucket", WantErr: true},
 			bucketName: "bucket",
@@ -91,7 +91,7 @@ func TestS3Downloader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: S3TaskInput{DataInput{Path: "path/to/file"}},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: "response", Metadata: map[string]interface{}{}}, true},
+		}, &task.TaskData[*task.S3DownloaderOutput]{Data: &task.S3DownloaderOutput{Data: []byte("response")}, Metadata: map[string]interface{}{}}, true},
 		{"It correctly handles error on adaptFn", fields{
 			client:     &mockS3Client{ExpectedResponse: "response", BucketName: "bucket", WantErr: false},
 			bucketName: "bucket",
@@ -103,7 +103,7 @@ func TestS3Downloader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: S3TaskInput{DataInput{Path: "path/to/file"}},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: "response", Metadata: map[string]interface{}{}}, true},
+		}, &task.TaskData[*task.S3DownloaderOutput]{Data: &task.S3DownloaderOutput{Data: []byte("response")}, Metadata: map[string]interface{}{}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestS3Downloader_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(string(got.Data.(*task.S3DownloaderOutput).Data), tt.want.Data) {
+			if !tt.wantErr && !reflect.DeepEqual(got.Data.Data, tt.want.Data.Data) {
 				t.Errorf("S3Downloader.Run() = %v, want %v", got, tt.want)
 			}
 		})

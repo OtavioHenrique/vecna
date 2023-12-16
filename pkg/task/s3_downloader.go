@@ -40,7 +40,7 @@ func NewS3Downloader(client s3iface.S3API, bucketName string, adaptFn func(inter
 
 // The return from Run() will be a S3DownloaderOutput (containing object as []data) and Metadata
 // No metadata will be added.
-func (s *S3Downloader) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*TaskData, error) {
+func (s *S3Downloader) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*TaskData[*S3DownloaderOutput], error) {
 	path, err := s.adaptFn(input, meta)
 
 	if err != nil {
@@ -66,5 +66,5 @@ func (s *S3Downloader) Run(_ context.Context, input interface{}, meta map[string
 
 	s.logger.Debug("object downloaded successfully", "path", *path)
 
-	return &TaskData{Data: &S3DownloaderOutput{Data: body}, Metadata: meta}, nil
+	return &TaskData[*S3DownloaderOutput]{Data: &S3DownloaderOutput{Data: body}, Metadata: meta}, nil
 }
