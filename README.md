@@ -5,7 +5,7 @@ Vecna is a tiny library to build high concurrent application easily and focousin
 
 ### How to use
 
-To use just create your channels (queues), workers and tasks as you want.
+To use just create your workers and tasks as you want.
 
 ```go
 sqsProducer := workers.NewProducerWorker(

@@ -58,6 +58,21 @@ func (w *ChannelWatcher) Start() {
 	}()
 }
 
+// TODO metrics class. Mean to be used if you don't want metrics or don't implemented it yet
+type TODO struct{}
+
+func (m *TODO) EnqueuedMessages(msgsNum int, queueName string) {}
+
+func (m *TODO) ConsumedMessage(workerName string) {}
+
+func (m *TODO) ProducedMessage(workerName string) {}
+
+func (m *TODO) TaskError(workerName string) {}
+
+func (m *TODO) TaskSuccess(workerName string) {}
+
+func (m *TODO) TaskRun(workerName string) {}
+
 // MockMetric append metrics on maps. Don't use it on production environmnets.
 type MockMetric struct {
 	EnqueuedMessagesCalled map[string]int
