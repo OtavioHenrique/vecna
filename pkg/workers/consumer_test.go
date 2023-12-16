@@ -22,19 +22,19 @@ func (t *MockTaskConsumer) CalledWith() []string {
 	return t.calledWith
 }
 
-func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
 	t.mu.Lock()
 	t.calledWith = append(t.calledWith, string(input.([]byte)))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: []byte(""), Metadata: meta}, nil
+	return &task.TaskData[[]byte]{Data: []byte(""), Metadata: meta}, nil
 }
 
 func TestConsumerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Input     chan *workers.WorkerData
-		Task      *MockTaskConsumer
+		Input     chan *workers.WorkerData[[]byte]
+		Task      task.Task[any]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -46,7 +46,7 @@ func TestConsumerWorker_Start(t *testing.T) {
 	}{
 		{"Consuming message and running task with it", fields{
 			name:      "Test Consumer Worker",
-			Input:     make(chan *workers.WorkerData),
+			Input:     make(chan *workers.WorkerData[[]byte]),
 			Task:      &MockTaskConsumer{},
 			numWorker: 3,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
@@ -69,7 +69,7 @@ func TestConsumerWorker_Start(t *testing.T) {
 
 			go func() {
 				for i := 0; i < len(tt.inputMsgs); i++ {
-					tt.fields.Input <- &workers.WorkerData{Data: []byte(tt.inputMsgs[i])}
+					tt.fields.Input <- &workers.WorkerData[[]byte]{Data: []byte(tt.inputMsgs[i])}
 					time.Sleep(1 * time.Millisecond)
 				}
 

@@ -13,7 +13,7 @@ type TaskData[T any] struct {
 }
 
 // Task performs a simple action. Usually only one action.
-type Task interface {
+type Task[T any] interface {
 	// Run will be called by workers (usually)
 	// it will receive context, a interface{} (usually output from previous worker) and the metadata map
 	// should always return a pointer to TaskData and error

@@ -14,11 +14,11 @@ type BiDirectionalWorker struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	Input chan *WorkerData
+	Input chan *WorkerData[any]
 	// output is the channel which the worker will put output
-	Output chan *WorkerData
+	Output chan *WorkerData[any]
 	// task to be executed by the worker
-	task task.Task
+	task task.Task[any]
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
 	numWorker int
 	logger    *slog.Logger
@@ -27,7 +27,7 @@ type BiDirectionalWorker struct {
 	started   bool
 }
 
-func NewBiDirectionalWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
+func NewBiDirectionalWorker(name string, task task.Task[any], numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
 	w := new(BiDirectionalWorker)
 
 	w.name = name
@@ -48,11 +48,11 @@ func (w *BiDirectionalWorker) Started() bool {
 	return w.started
 }
 
-func (w *BiDirectionalWorker) InputCh() chan *WorkerData {
+func (w *BiDirectionalWorker) InputCh() chan *WorkerData[any] {
 	return w.Input
 }
 
-func (w *BiDirectionalWorker) OutputCh() chan *WorkerData {
+func (w *BiDirectionalWorker) OutputCh() chan *WorkerData[any] {
 	return w.Output
 }
 
@@ -76,7 +76,7 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 						w.logger.Error("task error", "worker", w.name, "error", err)
 						go w.metric.TaskError(w.name)
 					} else {
-						w.Output <- &WorkerData{Data: resp.Data, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData[any]{Data: resp.Data, Metadata: msgIn.Metadata}
 						go func() {
 							w.metric.TaskSuccess(w.name)
 							w.metric.ProducedMessage(w.name)

@@ -14,16 +14,16 @@ import (
 
 type MockTaskBidirectional struct{}
 
-func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
-	return &task.TaskData{Data: input, Metadata: meta}, nil
+func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
+	return &task.TaskData[[]byte]{Data: input.([]byte), Metadata: meta}, nil
 }
 
 func TestBiDirectionalWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Input     chan *workers.WorkerData
-		Output    chan *workers.WorkerData
-		task      task.Task
+		Input     chan *workers.WorkerData[[]byte]
+		Output    chan *workers.WorkerData[[]byte]
+		task      task.Task[any]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -35,8 +35,8 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 	}{
 		{"Correct receive messages on input, calls  task and put on output", fields{
 			name:      "Test BiDirectionalWorker",
-			Input:     make(chan *workers.WorkerData),
-			Output:    make(chan *workers.WorkerData),
+			Input:     make(chan *workers.WorkerData[[]byte]),
+			Output:    make(chan *workers.WorkerData[[]byte]),
 			numWorker: 3,
 			task:      &MockTaskBidirectional{},
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
@@ -60,7 +60,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 
 			go func() {
 				for i := 0; i < len(tt.inputMsgs); i++ {
-					tt.fields.Input <- &workers.WorkerData{Data: []byte(tt.inputMsgs[i])}
+					tt.fields.Input <- &workers.WorkerData[[]byte]{Data: []byte(tt.inputMsgs[i])}
 				}
 			}()
 
@@ -68,7 +68,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 			for i := 0; i < len(tt.inputMsgs); i++ {
 				msg := <-tt.fields.Output
 
-				outputMsgs = append(outputMsgs, string(msg.Data.([]byte)))
+				outputMsgs = append(outputMsgs, string(msg.Data))
 			}
 
 			if outputCount, expectedCount := len(outputMsgs), len(tt.inputMsgs); outputCount != expectedCount {

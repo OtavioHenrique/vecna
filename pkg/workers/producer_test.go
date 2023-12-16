@@ -20,7 +20,7 @@ type MockTaskProducer struct {
 	mu         sync.Mutex
 }
 
-func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
 
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
@@ -28,14 +28,14 @@ func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[st
 	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: msg, Metadata: meta}, nil
+	return &task.TaskData[[]byte]{Data: msg, Metadata: meta}, nil
 }
 
 func TestProducerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Output    chan *workers.WorkerData
-		task      task.Task
+		Output    chan *workers.WorkerData[[]byte]
+		task      task.Task[any]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -48,7 +48,7 @@ func TestProducerWorker_Start(t *testing.T) {
 	}{
 		{"Producing messages to task output", fields{
 			name:      "Test Producer Worker",
-			Output:    make(chan *workers.WorkerData),
+			Output:    make(chan *workers.WorkerData[[]byte]),
 			task:      &MockTaskProducer{},
 			numWorker: 3,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
@@ -70,7 +70,7 @@ func TestProducerWorker_Start(t *testing.T) {
 			w.Output = tt.fields.Output
 			w.Start(context.TODO())
 
-			var outputMsgs []*workers.WorkerData
+			var outputMsgs []*workers.WorkerData[[]byte]
 
 			for i := 0; i < tt.expectedCallCount; i++ {
 				msg := <-tt.fields.Output

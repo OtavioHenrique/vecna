@@ -14,9 +14,9 @@ type ProducerWorker struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// output is a channel which this worker will put tasks results
-	Output chan *WorkerData
+	Output chan *WorkerData[any]
 	// the task to be executed
-	task task.Task
+	task task.Task[any]
 	// number of workers (goroutines) on this worker pull.
 	numWorker int
 	logger    *slog.Logger
@@ -27,7 +27,7 @@ type ProducerWorker struct {
 	started bool
 }
 
-func NewProducerWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
+func NewProducerWorker(name string, task task.Task[any], numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
 	w := new(ProducerWorker)
 
 	w.name = name
@@ -49,11 +49,11 @@ func (w *ProducerWorker) Started() bool {
 	return w.started
 }
 
-func (w *ProducerWorker) InputCh() chan *WorkerData {
+func (w *ProducerWorker) InputCh() chan *WorkerData[any] {
 	return nil
 }
 
-func (w *ProducerWorker) OutputCh() chan *WorkerData {
+func (w *ProducerWorker) OutputCh() chan *WorkerData[any] {
 	return w.Output
 }
 
@@ -80,7 +80,7 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 						go w.metric.TaskError(w.name)
 						w.logger.Error("task error", "worker", w.name, "error", err)
 					} else {
-						w.Output <- &WorkerData{Data: resp.Data, Metadata: resp.Metadata}
+						w.Output <- &WorkerData[any]{Data: resp.Data, Metadata: resp.Metadata}
 						go func() {
 							w.metric.ProducedMessage(w.name)
 							w.metric.TaskRun(w.name)
