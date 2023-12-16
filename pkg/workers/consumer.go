@@ -13,7 +13,7 @@ type ConsumerWorker struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	input <-chan *WorkerData
+	Input chan *WorkerData
 	// task to be executed by the worker
 	task task.Task
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
@@ -21,13 +21,13 @@ type ConsumerWorker struct {
 	logger    *slog.Logger
 	metric    metrics.Metric
 	closeCh   chan struct{}
+	started   bool
 }
 
-func NewConsumerWorker(name string, inputCh <-chan *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker {
+func NewConsumerWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker {
 	w := new(ConsumerWorker)
 
 	w.name = name
-	w.input = inputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -37,6 +37,22 @@ func NewConsumerWorker(name string, inputCh <-chan *WorkerData, task task.Task, 
 	return w
 }
 
+func (w *ConsumerWorker) Name() string {
+	return w.name
+}
+
+func (w *ConsumerWorker) Started() bool {
+	return w.started
+}
+
+func (w *ConsumerWorker) InputCh() chan *WorkerData {
+	return w.Input
+}
+
+func (w *ConsumerWorker) OutputCh() chan *WorkerData {
+	return nil
+}
+
 func (w *ConsumerWorker) Start(ctx context.Context) {
 	w.logger.Info("starting consumer worker", "worker_name", w.name)
 
@@ -44,7 +60,7 @@ func (w *ConsumerWorker) Start(ctx context.Context) {
 		go func() {
 			for {
 				select {
-				case msgIn := <-w.input:
+				case msgIn := <-w.Input:
 					go w.metric.ConsumedMessage(w.name)
 					w.logger.Debug("Message Received", "worker_name", w.name)
 
@@ -63,6 +79,8 @@ func (w *ConsumerWorker) Start(ctx context.Context) {
 			}
 		}()
 	}
+
+	w.started = true
 }
 
 func (w *ConsumerWorker) Stop(ctx context.Context) {

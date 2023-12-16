@@ -8,6 +8,10 @@ type Worker interface {
 	Start(context.Context)
 	// Stop must perform all necessary logic to shutdown this worker
 	Stop(context.Context)
+	Name() string
+	Started() bool
+	OutputCh() chan *WorkerData
+	InputCh() chan *WorkerData
 }
 
 // Worker Data is the unit which workers produces as output and receives as input

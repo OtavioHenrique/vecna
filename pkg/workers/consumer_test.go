@@ -57,12 +57,12 @@ func TestConsumerWorker_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := workers.NewConsumerWorker(
 				tt.fields.name,
-				tt.fields.Input,
 				tt.fields.Task,
 				tt.fields.numWorker,
 				tt.fields.logger,
 				tt.fields.Metrics,
 			)
+			w.Input = tt.fields.Input
 			w.Start(context.TODO())
 
 			doneCh := make(chan struct{})

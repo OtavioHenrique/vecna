@@ -14,7 +14,7 @@ type ProducerWorker struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// output is a channel which this worker will put tasks results
-	output chan<- *WorkerData
+	Output chan *WorkerData
 	// the task to be executed
 	task task.Task
 	// number of workers (goroutines) on this worker pull.
@@ -24,13 +24,13 @@ type ProducerWorker struct {
 	// A trigger, which will the frequency which producer will be called
 	trigger time.Duration
 	closeCh chan struct{}
+	started bool
 }
 
-func NewProducerlWorker(name string, outputCh chan<- *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
+func NewProducerWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
 	w := new(ProducerWorker)
 
 	w.name = name
-	w.output = outputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -39,6 +39,22 @@ func NewProducerlWorker(name string, outputCh chan<- *WorkerData, task task.Task
 	w.closeCh = make(chan struct{})
 
 	return w
+}
+
+func (w *ProducerWorker) Name() string {
+	return w.name
+}
+
+func (w *ProducerWorker) Started() bool {
+	return w.started
+}
+
+func (w *ProducerWorker) InputCh() chan *WorkerData {
+	return nil
+}
+
+func (w *ProducerWorker) OutputCh() chan *WorkerData {
+	return w.Output
 }
 
 func (w *ProducerWorker) Start(ctx context.Context) {
@@ -64,7 +80,7 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 						go w.metric.TaskError(w.name)
 						w.logger.Error("task error", "worker", w.name, "error", err)
 					} else {
-						w.output <- &WorkerData{Data: resp.Data, Metadata: resp.Metadata}
+						w.Output <- &WorkerData{Data: resp.Data, Metadata: resp.Metadata}
 						go func() {
 							w.metric.ProducedMessage(w.name)
 							w.metric.TaskRun(w.name)
@@ -74,6 +90,8 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 			}
 		}()
 	}
+
+	w.started = true
 }
 
 func (w *ProducerWorker) Stop(ctx context.Context) {

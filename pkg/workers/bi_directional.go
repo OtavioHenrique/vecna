@@ -14,9 +14,9 @@ type BiDirectionalWorker struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	input <-chan *WorkerData
+	Input chan *WorkerData
 	// output is the channel which the worker will put output
-	output chan<- *WorkerData
+	Output chan *WorkerData
 	// task to be executed by the worker
 	task task.Task
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
@@ -24,14 +24,13 @@ type BiDirectionalWorker struct {
 	logger    *slog.Logger
 	metric    metrics.Metric
 	closeCh   chan struct{}
+	started   bool
 }
 
-func NewBiDirectionalWorker(name string, inputCh <-chan *WorkerData, outputCh chan<- *WorkerData, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
+func NewBiDirectionalWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
 	w := new(BiDirectionalWorker)
 
 	w.name = name
-	w.input = inputCh
-	w.output = outputCh
 	w.task = task
 	w.numWorker = numWorker
 	w.logger = logger
@@ -41,6 +40,22 @@ func NewBiDirectionalWorker(name string, inputCh <-chan *WorkerData, outputCh ch
 	return w
 }
 
+func (w *BiDirectionalWorker) Name() string {
+	return w.name
+}
+
+func (w *BiDirectionalWorker) Started() bool {
+	return w.started
+}
+
+func (w *BiDirectionalWorker) InputCh() chan *WorkerData {
+	return w.Input
+}
+
+func (w *BiDirectionalWorker) OutputCh() chan *WorkerData {
+	return w.Output
+}
+
 func (w *BiDirectionalWorker) Start(ctx context.Context) {
 	w.logger.Info("starting bidirectional worker", "worker_name", w.name)
 
@@ -48,7 +63,7 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 		go func() {
 			for {
 				select {
-				case msgIn := <-w.input:
+				case msgIn := <-w.Input:
 					go w.metric.ConsumedMessage(w.name)
 					w.logger.Debug("Message Received", "worker_name", w.name)
 
@@ -61,7 +76,7 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 						w.logger.Error("task error", "worker", w.name, "error", err)
 						go w.metric.TaskError(w.name)
 					} else {
-						w.output <- &WorkerData{Data: resp.Data, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData{Data: resp.Data, Metadata: msgIn.Metadata}
 						go func() {
 							w.metric.TaskSuccess(w.name)
 							w.metric.ProducedMessage(w.name)
@@ -73,6 +88,8 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 			}
 		}()
 	}
+
+	w.started = true
 }
 
 func (w *BiDirectionalWorker) Stop(ctx context.Context) {
