@@ -12,9 +12,9 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTaskBidirectional struct{}
+type MockTaskBidirectional[T []byte] struct{}
 
-func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
+func (t *MockTaskBidirectional[T]) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
 	return &task.TaskData[[]byte]{Data: input.([]byte), Metadata: meta}, nil
 }
 
@@ -23,7 +23,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 		name      string
 		Input     chan *workers.WorkerData[[]byte]
 		Output    chan *workers.WorkerData[[]byte]
-		task      task.Task[any]
+		task      task.Task[[]byte]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -38,7 +38,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 			Input:     make(chan *workers.WorkerData[[]byte]),
 			Output:    make(chan *workers.WorkerData[[]byte]),
 			numWorker: 3,
-			task:      &MockTaskBidirectional{},
+			task:      &MockTaskBidirectional[[]byte]{},
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			Metrics:   metrics.NewMockMetrics(),
 		}, []string{"Input1", "Input2", "Input3", "Input4", "Input5"}},

@@ -14,13 +14,13 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTaskProducer struct {
+type MockTaskProducer[T []byte] struct {
 	CalledWith []string
 	CallCount  int
 	mu         sync.Mutex
 }
 
-func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
+func (t *MockTaskProducer[T]) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[T], error) {
 
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
@@ -28,14 +28,14 @@ func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[st
 	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
 	t.mu.Unlock()
 
-	return &task.TaskData[[]byte]{Data: msg, Metadata: meta}, nil
+	return &task.TaskData[T]{Data: msg, Metadata: meta}, nil
 }
 
 func TestProducerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
 		Output    chan *workers.WorkerData[[]byte]
-		task      task.Task[any]
+		task      task.Task[[]byte]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -49,7 +49,7 @@ func TestProducerWorker_Start(t *testing.T) {
 		{"Producing messages to task output", fields{
 			name:      "Test Producer Worker",
 			Output:    make(chan *workers.WorkerData[[]byte]),
-			task:      &MockTaskProducer{},
+			task:      &MockTaskProducer[[]byte]{},
 			numWorker: 3,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			Metrics:   metrics.NewMockMetrics(),
@@ -59,7 +59,7 @@ func TestProducerWorker_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := workers.NewProducerWorker(
+			w := workers.NewProducerWorker[[]byte](
 				tt.fields.name,
 				tt.fields.task,
 				tt.fields.numWorker,

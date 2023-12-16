@@ -17,5 +17,5 @@ type Task[T any] interface {
 	// Run will be called by workers (usually)
 	// it will receive context, a interface{} (usually output from previous worker) and the metadata map
 	// should always return a pointer to TaskData and error
-	Run(context.Context, interface{}, map[string]interface{}, string) (*TaskData[any], error)
+	Run(context.Context, interface{}, map[string]interface{}, string) (*TaskData[T], error)
 }

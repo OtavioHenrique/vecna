@@ -9,13 +9,13 @@ import (
 )
 
 // Consumer worker is a worker than simply consumes from a channel and executes tasks passing the input
-type ConsumerWorker struct {
+type ConsumerWorker[T any] struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	Input chan *WorkerData[any]
+	Input chan *WorkerData[T]
 	// task to be executed by the worker
-	task task.Task[any]
+	task task.Task[T]
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
 	numWorker int
 	logger    *slog.Logger
@@ -24,8 +24,8 @@ type ConsumerWorker struct {
 	started   bool
 }
 
-func NewConsumerWorker(name string, task task.Task[any], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker {
-	w := new(ConsumerWorker)
+func NewConsumerWorker[T any](name string, task task.Task[T], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker[T] {
+	w := new(ConsumerWorker[T])
 
 	w.name = name
 	w.task = task
@@ -37,23 +37,23 @@ func NewConsumerWorker(name string, task task.Task[any], numWorker int, logger *
 	return w
 }
 
-func (w *ConsumerWorker) Name() string {
+func (w *ConsumerWorker[T]) Name() string {
 	return w.name
 }
 
-func (w *ConsumerWorker) Started() bool {
+func (w *ConsumerWorker[T]) Started() bool {
 	return w.started
 }
 
-func (w *ConsumerWorker) InputCh() chan *WorkerData[any] {
+func (w *ConsumerWorker[T]) InputCh() chan *WorkerData[T] {
 	return w.Input
 }
 
-func (w *ConsumerWorker) OutputCh() chan *WorkerData[any] {
+func (w *ConsumerWorker[T]) OutputCh() chan *WorkerData[T] {
 	return nil
 }
 
-func (w *ConsumerWorker) Start(ctx context.Context) {
+func (w *ConsumerWorker[T]) Start(ctx context.Context) {
 	w.logger.Info("starting consumer worker", "worker_name", w.name)
 
 	for i := 0; i < w.numWorker; i++ {
@@ -83,7 +83,7 @@ func (w *ConsumerWorker) Start(ctx context.Context) {
 	w.started = true
 }
 
-func (w *ConsumerWorker) Stop(ctx context.Context) {
+func (w *ConsumerWorker[T]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Worker", "worker_name", w.name)
 
 	close(w.closeCh)

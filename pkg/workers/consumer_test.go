@@ -13,16 +13,16 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTaskConsumer struct {
+type MockTaskConsumer[T []byte] struct {
 	calledWith []string
 	mu         sync.Mutex
 }
 
-func (t *MockTaskConsumer) CalledWith() []string {
+func (t *MockTaskConsumer[T]) CalledWith() []string {
 	return t.calledWith
 }
 
-func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
+func (t *MockTaskConsumer[T]) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
 	t.mu.Lock()
 	t.calledWith = append(t.calledWith, string(input.([]byte)))
 	t.mu.Unlock()
@@ -34,7 +34,7 @@ func TestConsumerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
 		Input     chan *workers.WorkerData[[]byte]
-		Task      task.Task[any]
+		Task      task.Task[[]byte]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -47,7 +47,7 @@ func TestConsumerWorker_Start(t *testing.T) {
 		{"Consuming message and running task with it", fields{
 			name:      "Test Consumer Worker",
 			Input:     make(chan *workers.WorkerData[[]byte]),
-			Task:      &MockTaskConsumer{},
+			Task:      &MockTaskConsumer[[]byte]{},
 			numWorker: 3,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			Metrics:   metrics.NewMockMetrics(),
@@ -78,7 +78,8 @@ func TestConsumerWorker_Start(t *testing.T) {
 
 			<-doneCh
 
-			if consumed, expected := len(tt.fields.Task.CalledWith()), len(tt.inputMsgs); consumed != expected {
+			task := tt.fields.Task.(*MockTaskConsumer[[]byte])
+			if consumed, expected := len(task.CalledWith()), len(tt.inputMsgs); consumed != expected {
 				t.Errorf("Consumer should have consumed all input messages. Expected msg count: %d, Result: %d", expected, consumed)
 			}
 		})

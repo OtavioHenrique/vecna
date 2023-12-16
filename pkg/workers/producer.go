@@ -10,13 +10,13 @@ import (
 )
 
 // Producer worker is a worker than simply produces messages on channel based on a empty execution of the given Task
-type ProducerWorker struct {
+type ProducerWorker[T any] struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// output is a channel which this worker will put tasks results
-	Output chan *WorkerData[any]
+	Output chan *WorkerData[T]
 	// the task to be executed
-	task task.Task[any]
+	task task.Task[T]
 	// number of workers (goroutines) on this worker pull.
 	numWorker int
 	logger    *slog.Logger
@@ -27,8 +27,8 @@ type ProducerWorker struct {
 	started bool
 }
 
-func NewProducerWorker(name string, task task.Task[any], numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker {
-	w := new(ProducerWorker)
+func NewProducerWorker[T any](name string, task task.Task[T], numWorker int, logger *slog.Logger, metric metrics.Metric, trigger time.Duration) *ProducerWorker[T] {
+	w := new(ProducerWorker[T])
 
 	w.name = name
 	w.task = task
@@ -41,23 +41,23 @@ func NewProducerWorker(name string, task task.Task[any], numWorker int, logger *
 	return w
 }
 
-func (w *ProducerWorker) Name() string {
+func (w *ProducerWorker[T]) Name() string {
 	return w.name
 }
 
-func (w *ProducerWorker) Started() bool {
+func (w *ProducerWorker[T]) Started() bool {
 	return w.started
 }
 
-func (w *ProducerWorker) InputCh() chan *WorkerData[any] {
+func (w *ProducerWorker[T]) InputCh() chan *WorkerData[T] {
 	return nil
 }
 
-func (w *ProducerWorker) OutputCh() chan *WorkerData[any] {
+func (w *ProducerWorker[T]) OutputCh() chan *WorkerData[T] {
 	return w.Output
 }
 
-func (w *ProducerWorker) Start(ctx context.Context) {
+func (w *ProducerWorker[T]) Start(ctx context.Context) {
 	w.logger.Info("starting producer worker", "worker_name", w.name)
 
 	ticker := time.NewTicker(w.trigger)
@@ -80,7 +80,7 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 						go w.metric.TaskError(w.name)
 						w.logger.Error("task error", "worker", w.name, "error", err)
 					} else {
-						w.Output <- &WorkerData[any]{Data: resp.Data, Metadata: resp.Metadata}
+						w.Output <- &WorkerData[T]{Data: resp.Data, Metadata: resp.Metadata}
 						go func() {
 							w.metric.ProducedMessage(w.name)
 							w.metric.TaskRun(w.name)
@@ -94,7 +94,7 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 	w.started = true
 }
 
-func (w *ProducerWorker) Stop(ctx context.Context) {
+func (w *ProducerWorker[T]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Producer Worker", "worker_name", w.name)
 
 	close(w.closeCh)
