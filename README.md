@@ -81,7 +81,7 @@ But you're heavy encouraged to code your business logic too.
 
 ## Monitoring
 
-Vecna already come with a solid set of log needed to debug and monitor and with a basic interface `Metric` which recommended use is with prometheus.
+Vecna already come with a solid set of log needed to debug and monitor and with a basic interface `Metric` which recommended use is with prometheus. If you don't want to use metrics now, just use the `metrics.TODO` provided.
 
 The `EnqueuedMessages()` function from `Metric` is useful to monitor how your workers is dealing with data flow, and if some workers need more or less goroutines. To use this metric, is recommended to use the `task.ChannelWatcher` object.
 
