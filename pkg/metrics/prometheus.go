@@ -49,56 +49,56 @@ var taskRuntime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{1, 5, 10, 15, 20, 35, 50, 100, 200, 350, 500, 750, 1000, 2000},
 }, []string{"worker_name"})
 
-type VecnaMetrics struct {
-	enqueuedMessages prometheus.GaugeVec
-	consumedMessage  prometheus.CounterVec
-	producedMessage  prometheus.CounterVec
-	taskError        prometheus.CounterVec
-	taskSuccess      prometheus.CounterVec
-	taskRun          prometheus.CounterVec
-	taskRuntime      prometheus.HistogramVec
+type PromMetrics struct {
+	EnqueuedMsgs prometheus.GaugeVec
+	ConsumedMsg  prometheus.CounterVec
+	ProducedMsg  prometheus.CounterVec
+	TaskErr      prometheus.CounterVec
+	TaskSucc     prometheus.CounterVec
+	TaskR        prometheus.CounterVec
+	TaskRT       prometheus.HistogramVec
 }
 
-func NewVecnaMetrics() *VecnaMetrics {
-	metrics := new(VecnaMetrics)
+func NewPromMetrics() *PromMetrics {
+	metrics := new(PromMetrics)
 
-	metrics.enqueuedMessages = *enqueuedMsgs
-	metrics.consumedMessage = *consumedMsg
-	metrics.producedMessage = *producedMsg
-	metrics.taskError = *taskError
-	metrics.taskSuccess = *taskSuccess
-	metrics.taskRun = *taskRun
-	metrics.taskRuntime = *taskRuntime
+	metrics.EnqueuedMsgs = *enqueuedMsgs
+	metrics.ConsumedMsg = *consumedMsg
+	metrics.ProducedMsg = *producedMsg
+	metrics.TaskErr = *taskError
+	metrics.TaskSucc = *taskSuccess
+	metrics.TaskR = *taskRun
+	metrics.TaskRT = *taskRuntime
 
 	return metrics
 }
 
-func (m *VecnaMetrics) EnqueuedMessages(msgsNum int, queueName string) {
-	m.enqueuedMessages.WithLabelValues(queueName).Set(float64(msgsNum))
+func (m *PromMetrics) EnqueuedMessages(msgsNum int, queueName string) {
+	m.EnqueuedMsgs.WithLabelValues(queueName).Set(float64(msgsNum))
 }
 
-func (m *VecnaMetrics) ConsumedMessage(workerName string) {
-	m.consumedMessage.WithLabelValues(workerName).Inc()
+func (m *PromMetrics) ConsumedMessage(workerName string) {
+	m.ConsumedMsg.WithLabelValues(workerName).Inc()
 }
 
-func (m *VecnaMetrics) ProducedMessage(workerName string) {
-	m.producedMessage.WithLabelValues(workerName).Inc()
+func (m *PromMetrics) ProducedMessage(workerName string) {
+	m.ProducedMsg.WithLabelValues(workerName).Inc()
 }
 
-func (m *VecnaMetrics) TaskError(workerName string) {
-	m.taskError.WithLabelValues(workerName).Inc()
+func (m *PromMetrics) TaskError(workerName string) {
+	m.TaskErr.WithLabelValues(workerName).Inc()
 }
 
-func (m *VecnaMetrics) TaskSuccess(workerName string) {
-	m.taskSuccess.WithLabelValues(workerName).Inc()
+func (m *PromMetrics) TaskSuccess(workerName string) {
+	m.TaskSucc.WithLabelValues(workerName).Inc()
 }
 
-func (m *VecnaMetrics) TaskRun(workerName string) {
-	m.taskRun.WithLabelValues(workerName).Inc()
+func (m *PromMetrics) TaskRun(workerName string) {
+	m.TaskR.WithLabelValues(workerName).Inc()
 }
 
-func (m *VecnaMetrics) ObserveTaskExecutionTime(workerName string, start time.Time, end time.Time) {
+func (m *PromMetrics) TaskExecutionTime(workerName string, start time.Time, end time.Time) {
 	elapsed := start.Sub(end)
 
-	m.taskRuntime.WithLabelValues(workerName).Observe(float64(elapsed.Milliseconds()))
+	m.TaskRT.WithLabelValues(workerName).Observe(float64(elapsed.Milliseconds()))
 }
