@@ -92,8 +92,9 @@ func TestExecutor_StartWorkers(t *testing.T) {
 						t.Errorf("Expected input channel to preivous worker output channel. Current worker %s, Previous Worker %s", input.Worker, previousWorker)
 					}
 
-					if chs[input.Worker.Name()] != input.Worker.InputCh() {
-						t.Errorf("Worker channel is not on returned map. Worker %s", input.Worker.Name())
+					chName := fmt.Sprintf("%s_input", input.Worker.Name())
+					if chs[chName] != input.Worker.OutputCh() {
+						t.Errorf("Worker channel is not on returned map. Worker %s, QueueName: %s", input.Worker.Name(), chName)
 					}
 				}
 
