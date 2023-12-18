@@ -8,19 +8,23 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type ExecutorInput struct {
-	Worker    workers.Worker
-	Ch        chan *workers.WorkerData
+type Input interface {
+	Start()
+}
+
+type ExecutorInput[T any] struct {
+	Worker    workers.Worker[T]
+	Ch        chan *workers.WorkerData[T]
 	QueueSize int
 }
 
 // Executor is the object that will handle all orchestration around Workers created by user
 type Executor struct {
-	inputs []ExecutorInput
+	inputs []any
 	logger *slog.Logger
 }
 
-func NewExecutor(inputs []ExecutorInput, logger *slog.Logger) *Executor {
+func NewExecutor(logger *slog.Logger, inputs ...any) *Executor {
 	ex := new(Executor)
 
 	ex.inputs = inputs
@@ -31,53 +35,74 @@ func NewExecutor(inputs []ExecutorInput, logger *slog.Logger) *Executor {
 
 // Start all executor's workers and create its queues.
 // Return a map of queues names and queues (channel) to be used by watcher if needed
-func (e *Executor) StartWorkers(ctx context.Context) map[string]chan *workers.WorkerData {
+func (e *Executor) StartWorkers(ctx context.Context) map[string]chan *workers.WorkerData[any] {
 	queues := e.connectWorkers()
 	e.logger.Info("all workers connected by queues")
 
-	for _, input := range e.inputs {
-		input.Worker.Start(ctx)
-	}
+	e.startWorkers(ctx)
 
 	return queues
 }
 
-func (e *Executor) connectWorkers() map[string]chan *workers.WorkerData {
-	var previousWorker workers.Worker
-
-	chCreated := make(map[string]chan *workers.WorkerData)
-
+func (e *Executor) startWorkers(ctx context.Context) {
 	for _, input := range e.inputs {
-		var ch chan *workers.WorkerData
+		i := input.(ExecutorInput[any])
+
+		switch i.Worker.(type) {
+		case *workers.BiDirectionalWorker[any]:
+			w := i.Worker.(*workers.BiDirectionalWorker[any])
+			w.Start(ctx)
+		case *workers.ProducerWorker[any]:
+			w := i.Worker.(*workers.ProducerWorker[any])
+
+			w.Start(ctx)
+		case *workers.ConsumerWorker[any]:
+			w := i.Worker.(*workers.ConsumerWorker[any])
+
+			w.Start(ctx)
+		}
+
+	}
+}
+
+func (e *Executor) connectWorkers() map[string]chan *workers.WorkerData[any] {
+	var previousWorker workers.Worker[any]
+
+	chCreated := make(map[string]chan *workers.WorkerData[any])
+
+	for _, a := range e.inputs {
+		input := a.(ExecutorInput[any])
+		var ch chan *workers.WorkerData[any]
+
 		if input.Ch != nil {
 			ch = input.Ch
 		} else {
-			ch = make(chan *workers.WorkerData, input.QueueSize)
+			ch = make(chan *workers.WorkerData[any], input.QueueSize)
 		}
 
 		switch input.Worker.(type) {
-		case *workers.BiDirectionalWorker:
-			w := input.Worker.(*workers.BiDirectionalWorker)
+		case *workers.BiDirectionalWorker[any]:
+			w := input.Worker.(*workers.BiDirectionalWorker[any])
 
 			w.Input = previousWorker.OutputCh()
 			w.Output = ch
 
 			previousWorker = w
 
-			chName := fmt.Sprintf("%s_input", input.Worker.Name())
+			chName := fmt.Sprintf("%s_input", w.Name())
 			chCreated[chName] = previousWorker.OutputCh()
-		case *workers.ProducerWorker:
-			w := input.Worker.(*workers.ProducerWorker)
+		case *workers.ProducerWorker[any]:
+			w := input.Worker.(*workers.ProducerWorker[any])
 
 			w.Output = ch
 			previousWorker = w
-		case *workers.ConsumerWorker:
-			w := input.Worker.(*workers.ConsumerWorker)
+		case *workers.ConsumerWorker[any]:
+			w := input.Worker.(*workers.ConsumerWorker[any])
 
 			w.Input = previousWorker.OutputCh()
 			previousWorker = w
 
-			chName := fmt.Sprintf("%s_input", input.Worker.Name())
+			chName := fmt.Sprintf("%s_input", w.Name())
 			chCreated[chName] = previousWorker.OutputCh()
 		}
 	}

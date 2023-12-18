@@ -15,13 +15,13 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTask struct {
+type MockTask[T any] struct {
 	CalledWith []string
 	CallCount  int
 	mu         sync.Mutex
 }
 
-func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTask[T]) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
 
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
@@ -29,12 +29,12 @@ func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]int
 	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: msg, Metadata: meta}, nil
+	return &task.TaskData[[]byte]{Data: msg, Metadata: meta}, nil
 }
 
 func TestExecutor_StartWorkers(t *testing.T) {
 	type fields struct {
-		inputs []executor.ExecutorInput
+		inputs []any
 		logger *slog.Logger
 	}
 	type args struct {
@@ -46,25 +46,25 @@ func TestExecutor_StartWorkers(t *testing.T) {
 		args   args
 	}{
 		{"It correct start all workers and creates default queues", fields{
-			inputs: []executor.ExecutorInput{
-				{Worker: workers.NewProducerWorker(
+			inputs: []any{
+				executor.ExecutorInput[[]byte]{Worker: workers.NewProducerWorker[[]byte](
 					"test-producer",
-					&MockTask{},
+					&MockTask[[]byte]{},
 					2,
 					slog.New(slog.NewTextHandler(os.Stdout, nil)),
 					metrics.NewMockMetrics(),
 					500*time.Millisecond,
 				), QueueSize: 10},
-				{Worker: workers.NewBiDirectionalWorker(
+				executor.ExecutorInput[[]byte]{Worker: workers.NewBiDirectionalWorker[[]byte](
 					"test-bidirectional",
-					&MockTask{},
+					&MockTask[[]byte]{},
 					2,
 					slog.New(slog.NewTextHandler(os.Stdout, nil)),
 					metrics.NewMockMetrics(),
 				), QueueSize: 10},
-				{Worker: workers.NewConsumerWorker(
+				executor.ExecutorInput[[]byte]{Worker: workers.NewConsumerWorker[[]byte](
 					"test-consumer",
-					&MockTask{},
+					&MockTask[[]byte]{},
 					2,
 					slog.New(slog.NewTextHandler(os.Stdout, nil)),
 					metrics.NewMockMetrics(),
@@ -76,29 +76,29 @@ func TestExecutor_StartWorkers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := executor.NewExecutor(
-				tt.fields.inputs,
 				tt.fields.logger,
+				tt.fields.inputs,
 			)
 			chs := e.StartWorkers(tt.args.ctx)
 
-			var previousWorker workers.Worker
+			var previousWorker workers.Worker[any]
 			for _, input := range tt.fields.inputs {
-				if input.Worker.Started() != true {
+				if input.Worker.(workers.Worker[any]).Started() != true {
 					t.Errorf("Expected worker to be started. Worker %s", input.Worker)
 				}
 
 				if previousWorker != nil {
-					if input.Worker.InputCh() != previousWorker.OutputCh() {
+					if input.Worker.(workers.Worker[any]).InputCh() != previousWorker.OutputCh() {
 						t.Errorf("Expected input channel to preivous worker output channel. Current worker %s, Previous Worker %s", input.Worker, previousWorker)
 					}
 
-					chName := fmt.Sprintf("%s_input", input.Worker.Name())
-					if chs[chName] != input.Worker.OutputCh() {
-						t.Errorf("Worker channel is not on returned map. Worker %s, QueueName: %s", input.Worker.Name(), chName)
+					chName := fmt.Sprintf("%s_input", input.Worker.(workers.Worker[any]).Name())
+					if chs[chName] != input.Worker.(workers.Worker[any]).OutputCh() {
+						t.Errorf("Worker channel is not on returned map. Worker %s, QueueName: %s", input.Worker.(workers.Worker[any]).Name(), chName)
 					}
 				}
 
-				previousWorker = input.Worker
+				previousWorker = input.Worker.(workers.Worker[any])
 			}
 		})
 	}
