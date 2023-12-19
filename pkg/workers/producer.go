@@ -74,13 +74,14 @@ func (w *ProducerWorker) Start(ctx context.Context) {
 					var emptyMessage [0]byte
 
 					go w.metric.TaskRun(w.name)
-					resp, err := w.task.Run(ctx, emptyMessage[:], map[string]interface{}{}, w.name)
+					metadata := map[string]interface{}{}
+					resp, err := w.task.Run(ctx, emptyMessage[:], metadata, w.name)
 
 					if err != nil {
 						go w.metric.TaskError(w.name)
 						w.logger.Error("task error", "worker", w.name, "error", err)
 					} else {
-						w.Output <- &WorkerData{Data: resp.Data, Metadata: resp.Metadata}
+						w.Output <- &WorkerData{Data: resp, Metadata: metadata}
 						go func() {
 							w.metric.ProducedMessage(w.name)
 							w.metric.TaskRun(w.name)

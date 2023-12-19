@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
@@ -22,12 +21,12 @@ func (t *MockTaskConsumer) CalledWith() []string {
 	return t.calledWith
 }
 
-func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 	t.mu.Lock()
 	t.calledWith = append(t.calledWith, string(input.([]byte)))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: []byte(""), Metadata: meta}, nil
+	return []byte(""), nil
 }
 
 func TestConsumerWorker_Start(t *testing.T) {

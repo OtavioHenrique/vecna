@@ -11,7 +11,6 @@ import (
 
 	executor "github.com/otaviohenrique/vecna/pkg/executor"
 	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
@@ -21,7 +20,7 @@ type MockTask struct {
 	mu         sync.Mutex
 }
 
-func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
@@ -29,7 +28,7 @@ func (t *MockTask) Run(_ context.Context, input interface{}, meta map[string]int
 	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: msg, Metadata: meta}, nil
+	return msg, nil
 }
 
 func TestExecutor_StartWorkers(t *testing.T) {

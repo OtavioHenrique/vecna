@@ -20,7 +20,7 @@ type MockTaskProducer struct {
 	mu         sync.Mutex
 }
 
-func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
+func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
@@ -28,7 +28,7 @@ func (t *MockTaskProducer) Run(_ context.Context, input interface{}, meta map[st
 	msg := []byte(fmt.Sprintf("Called count: %d", t.CallCount))
 	t.mu.Unlock()
 
-	return &task.TaskData{Data: msg, Metadata: meta}, nil
+	return msg, nil
 }
 
 func TestProducerWorker_Start(t *testing.T) {

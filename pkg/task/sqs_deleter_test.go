@@ -53,7 +53,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *task.TaskData
+		want    *string
 		wantErr bool
 	}{
 		{"It correctly deletes messages with received handler", fields{
@@ -69,7 +69,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: "message-handler",
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, false,
+		}, nil, false,
 		},
 		{"It correctly return error when an error is returned by delete call", fields{
 			client: &MockSQSDeleter{WantErr: true},
@@ -84,7 +84,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: "message-handler",
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, true,
+		}, nil, true,
 		},
 		{"It correctly return error when an error returned by adaptFn", fields{
 			client: &MockSQSDeleter{WantErr: true},
@@ -97,7 +97,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: "message-handler",
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, true,
+		}, nil, true,
 		},
 	}
 	for _, tt := range tests {
@@ -114,7 +114,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 				t.Errorf("SQSDeleter.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && !reflect.DeepEqual(got.Data, tt.want.Data) {
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SQSDeleter.Run() = %v, want %v", got, tt.want)
 			}
 		})

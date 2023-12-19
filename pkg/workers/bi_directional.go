@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"log/slog"
-	"maps"
 
 	"github.com/otaviohenrique/vecna/pkg/metrics"
 	"github.com/otaviohenrique/vecna/pkg/task"
@@ -70,13 +69,11 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 					go w.metric.TaskRun(w.name)
 					resp, err := w.task.Run(ctx, msgIn.Data, msgIn.Metadata, w.name)
 
-					maps.Copy(msgIn.Metadata, resp.Metadata)
-
 					if err != nil {
 						w.logger.Error("task error", "worker", w.name, "error", err)
 						go w.metric.TaskError(w.name)
 					} else {
-						w.Output <- &WorkerData{Data: resp.Data, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData{Data: resp, Metadata: msgIn.Metadata}
 						go func() {
 							w.metric.TaskSuccess(w.name)
 							w.metric.ProducedMessage(w.name)

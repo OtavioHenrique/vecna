@@ -59,11 +59,12 @@ func TestSQSConsumer_Run(t *testing.T) {
 		meta map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *task.TaskData
-		wantErr bool
+		name         string
+		fields       fields
+		args         args
+		want         string
+		wantMetadata map[string]interface{}
+		wantErr      bool
 	}{
 		{"It correct returns expected message", fields{
 			client: &MockSQS{QueueURL: "any-queue", ExpectedResponse: "message", ReceiptHandle: "receipt-handler", WantErr: false},
@@ -73,7 +74,7 @@ func TestSQSConsumer_Run(t *testing.T) {
 			in0:  context.TODO(),
 			in1:  struct{}{},
 			meta: map[string]interface{}{"hello": "ola"},
-		}, &task.TaskData{Data: "message", Metadata: map[string]interface{}{"hello": "ola", "worker": map[string][]string{"receiptHandlers": {"receipt-handler"}}}}, false},
+		}, "message", map[string]interface{}{"hello": "ola", "worker": map[string][]string{"receiptHandlers": {"receipt-handler"}}}, false},
 		{"It correct returns error", fields{
 			client: &MockSQS{QueueURL: "any-queue", ExpectedResponse: "message", WantErr: true},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
@@ -82,8 +83,9 @@ func TestSQSConsumer_Run(t *testing.T) {
 			in0:  context.TODO(),
 			in1:  struct{}{},
 			meta: map[string]interface{}{"hello": "ola"},
-		}, nil, true},
+		}, "message", map[string]interface{}{}, true},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := task.NewSQSConsumer(
@@ -91,18 +93,19 @@ func TestSQSConsumer_Run(t *testing.T) {
 				tt.fields.logger,
 				tt.fields.opts,
 			)
+
 			got, err := c.Run(tt.args.in0, tt.args.in1, tt.args.meta, "worker")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQSConsumer.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(*got.Data.([]*task.SQSConsumerOutput)[0].Content, tt.want.Data) {
-				t.Errorf("SQSConsumer.Run() = %v, want %v", got.Data, tt.want.Data)
+			if !tt.wantErr && !reflect.DeepEqual(*got[0].Content, tt.want) {
+				t.Errorf("SQSConsumer.Run() = %v, want %v", *got[0].Content, tt.want)
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(got.Metadata, tt.want.Metadata) {
-				t.Errorf("SQSConsumer.Run() = %v, want %v", got.Metadata, tt.want.Metadata)
+			if !tt.wantErr && !reflect.DeepEqual(tt.wantMetadata, tt.args.meta) {
+				t.Errorf("SQSConsumer.Run() = %v, want %v", tt.args.meta, tt.wantMetadata)
 			}
 		})
 	}
