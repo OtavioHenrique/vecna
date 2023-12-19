@@ -14,8 +14,8 @@ import (
 
 type MockTaskBidirectional struct{}
 
-func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData, error) {
-	return &task.TaskData{Data: input, Metadata: meta}, nil
+func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
+	return input, nil
 }
 
 func TestBiDirectionalWorker_Start(t *testing.T) {

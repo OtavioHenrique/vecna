@@ -63,7 +63,7 @@ func TestS3Uploader_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *task.TaskData
+		want    *string
 		wantErr bool
 	}{
 		{"it correct upload the file based on given input", fields{
@@ -79,7 +79,7 @@ func TestS3Uploader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: []string{"path/to/obj", "any-data-to-upload"},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, false},
+		}, nil, false},
 		{"it correct return error when aws call returns error", fields{
 			client:     &S3UploaderMock{WantErr: true},
 			bucketName: "any-bucket",
@@ -93,7 +93,7 @@ func TestS3Uploader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: []string{"path/to/obj", "any-data-to-upload"},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, true},
+		}, nil, true},
 		{"it correct return error when adaptFn returns error", fields{
 			client:     &S3UploaderMock{WantErr: false},
 			bucketName: "any-bucket",
@@ -105,7 +105,7 @@ func TestS3Uploader_Run(t *testing.T) {
 			in0:   context.TODO(),
 			input: []string{"path/to/obj", "any-data-to-upload"},
 			meta:  map[string]interface{}{},
-		}, &task.TaskData{Data: nil, Metadata: map[string]interface{}{}}, true},
+		}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
