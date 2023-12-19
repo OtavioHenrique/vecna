@@ -22,7 +22,6 @@ type MockTask[T any] struct {
 }
 
 func (t *MockTask[T]) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*task.TaskData[[]byte], error) {
-
 	t.mu.Lock()
 	t.CalledWith = append(t.CalledWith, string(input.([]byte)))
 	t.CallCount += 1
@@ -34,7 +33,7 @@ func (t *MockTask[T]) Run(_ context.Context, input interface{}, meta map[string]
 
 func TestExecutor_StartWorkers(t *testing.T) {
 	type fields struct {
-		inputs []any
+		inputs []executor.ExecutorInput[[]byte]
 		logger *slog.Logger
 	}
 	type args struct {
@@ -46,7 +45,7 @@ func TestExecutor_StartWorkers(t *testing.T) {
 		args   args
 	}{
 		{"It correct start all workers and creates default queues", fields{
-			inputs: []any{
+			inputs: []executor.ExecutorInput[[]byte]{
 				executor.ExecutorInput[[]byte]{Worker: workers.NewProducerWorker[[]byte](
 					"test-producer",
 					&MockTask[[]byte]{},
@@ -77,28 +76,26 @@ func TestExecutor_StartWorkers(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := executor.NewExecutor(
 				tt.fields.logger,
-				tt.fields.inputs,
+				tt.fields.inputs[0],
+				tt.fields.inputs[1],
+				tt.fields.inputs[2],
 			)
-			chs := e.StartWorkers(tt.args.ctx)
 
-			var previousWorker workers.Worker[any]
+			e.StartWorkers(tt.args.ctx)
+
+			var previousWorker workers.Worker[[]byte]
 			for _, input := range tt.fields.inputs {
-				if input.Worker.(workers.Worker[any]).Started() != true {
+				if input.Worker.Started() != true {
 					t.Errorf("Expected worker to be started. Worker %s", input.Worker)
 				}
 
 				if previousWorker != nil {
-					if input.Worker.(workers.Worker[any]).InputCh() != previousWorker.OutputCh() {
+					if input.Worker.InputCh() != previousWorker.OutputCh() {
 						t.Errorf("Expected input channel to preivous worker output channel. Current worker %s, Previous Worker %s", input.Worker, previousWorker)
-					}
-
-					chName := fmt.Sprintf("%s_input", input.Worker.(workers.Worker[any]).Name())
-					if chs[chName] != input.Worker.(workers.Worker[any]).OutputCh() {
-						t.Errorf("Worker channel is not on returned map. Worker %s, QueueName: %s", input.Worker.(workers.Worker[any]).Name(), chName)
 					}
 				}
 
-				previousWorker = input.Worker.(workers.Worker[any])
+				previousWorker = input.Worker
 			}
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
 
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
@@ -35,18 +36,18 @@ func NewExecutor(logger *slog.Logger, inputs ...any) *Executor {
 
 // Start all executor's workers and create its queues.
 // Return a map of queues names and queues (channel) to be used by watcher if needed
-func (e *Executor) StartWorkers(ctx context.Context) map[string]chan *workers.WorkerData[any] {
-	queues := e.connectWorkers()
+func (e *Executor) StartWorkers(ctx context.Context, i interface{}) {
+	//queues := e.connectWorkers()
 	e.logger.Info("all workers connected by queues")
 
-	e.startWorkers(ctx)
+	e.startWorkers(ctx, i)
 
-	return queues
+	//return queues
 }
 
-func (e *Executor) startWorkers(ctx context.Context) {
+func (e *Executor) startWorkers(ctx context.Context, i reflect.Type) {
 	for _, input := range e.inputs {
-		i := input.(ExecutorInput[any])
+		i := input.(ExecutorInput[i])
 
 		switch i.Worker.(type) {
 		case *workers.BiDirectionalWorker[any]:
