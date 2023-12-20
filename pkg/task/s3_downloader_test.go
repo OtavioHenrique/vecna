@@ -119,7 +119,7 @@ func TestS3Downloader_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(string(got.Data), tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(string(got.(*task.S3DownloaderOutput).Data), tt.want) {
 				t.Errorf("S3Downloader.Run() = %v, want %v", got, tt.want)
 			}
 		})

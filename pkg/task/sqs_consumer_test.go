@@ -100,8 +100,8 @@ func TestSQSConsumer_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(*got[0].Content, tt.want) {
-				t.Errorf("SQSConsumer.Run() = %v, want %v", *got[0].Content, tt.want)
+			if !tt.wantErr && !reflect.DeepEqual(*got.([]*task.SQSConsumerOutput)[0].Content, tt.want) {
+				t.Errorf("SQSConsumer.Run() = %v, want %v", *got.([]*task.SQSConsumerOutput)[0].Content, tt.want)
 			}
 
 			if !tt.wantErr && !reflect.DeepEqual(tt.wantMetadata, tt.args.meta) {

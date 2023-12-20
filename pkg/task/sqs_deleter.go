@@ -53,7 +53,7 @@ func (s *SQSDeleter) GetQueueURL() *string {
 }
 
 // Run() delete a message on SQS based on the return of adaptFn. It only returns errors
-func (s *SQSDeleter) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*string, error) {
+func (s *SQSDeleter) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 	handler, err := s.adaptFn(input, meta)
 	if err != nil {
 		return nil, err
