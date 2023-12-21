@@ -43,7 +43,7 @@ func NewS3Uploader(client s3iface.S3API, bucketName string, adaptFn func(interfa
 
 // Run() will be called by worker and should return a pointer to TaskData.
 // It doesn't merge nothing on metadata given and only return errors if any
-func (s *S3Uploader) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (*string, error) {
+func (s *S3Uploader) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 	s3Input, err := s.adaptFn(input, meta)
 
 	if err != nil {

@@ -72,7 +72,7 @@ func (c *SQSConsumer) visibilityTimeout() int64 {
 
 // Run when called consume messages from SQS and return TaskData with Data containing an array of *SQSConsumerOutput
 // It appends receipt handlers to metadata to be excluded later by user
-func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) ([]*SQSConsumerOutput, error) {
+func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) (interface{}, error) {
 	msgs, err := c.receiveMessages(c.queueURL)
 
 	if err != nil {
