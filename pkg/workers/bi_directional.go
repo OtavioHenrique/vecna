@@ -64,6 +64,8 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 				select {
 				case msgIn := <-w.Input:
 					go w.metric.ConsumedMessage(w.name)
+					go w.metric.EnqueuedMessages(len(w.Input), w.name+"input")
+
 					w.logger.Debug("Message Received", "worker_name", w.name)
 
 					go w.metric.TaskRun(w.name)
