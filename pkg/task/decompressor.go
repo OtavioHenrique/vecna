@@ -2,15 +2,12 @@ package task
 
 import (
 	"bytes"
-	"compress/flate"
 	"compress/gzip"
-	"compress/zlib"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
 
-	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -28,12 +25,6 @@ func NewReader(compressionType string, reader io.Reader) (io.Reader, error) {
 	switch compressionType {
 	case GZIP_TYPE:
 		compressor, err = gzip.NewReader(reader)
-	case ZLIB_TYPE:
-		compressor, err = zlib.NewReader(reader)
-	case DEFLATE_TYPE:
-		compressor = flate.NewReader(reader)
-	case SNAPPY_TYPE:
-		compressor = snappy.NewReader(reader)
 	case ZSTD_TYPE:
 		compressor, err = zstd.NewReader(reader)
 	default:
@@ -77,7 +68,6 @@ func (d *Decompressor) Run(_ context.Context, input interface{}, meta map[string
 	if err != nil {
 		return nil, err
 	}
-
 	decompressed, err := io.ReadAll(reader)
 
 	if err != nil {
