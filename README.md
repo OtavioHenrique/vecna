@@ -14,7 +14,7 @@ sqsProducer := workers.NewProducerWorker(
     10,
     logger,
     metric,
-    time.NewTicker(500 * time.Millisecond)
+    time.NewTicker(500 * time.Millisecond),
 )
 
 s3Downloader := workers.NewBidirectionalWorker(
@@ -28,7 +28,7 @@ s3Downloader := workers.NewBidirectionalWorker(
 				return &task.Data.Path, nil
 		},
         logger,
-        metric)
+        metric),
 )
 
 businessLogic := workers.NewConsumerWorker(
@@ -101,18 +101,6 @@ prometheus.NewRegistry().MustRegister(
     vecnaMetrics.ConsumedMsg
     ...
 )
-```
-
-The `EnqueuedMessages()` function from `Metric` is useful to monitor how your workers is dealing with data flow, and if some workers need more or less goroutines. To use this metric, is recommended to use the `task.ChannelWatcher` object.
-
-```go
-watcher := task.NewChannelWatcher(
-    queues,
-    metric,
-    time.NewTicker(10 * time.Second)
-)
-
-watcher.Start()
 ```
 
 ### Development

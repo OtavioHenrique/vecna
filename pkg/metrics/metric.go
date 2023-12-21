@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"reflect"
 	"sync"
 	"time"
 )
@@ -22,42 +21,6 @@ type Metric interface {
 	TaskRun(workerName string)
 	// TaskExecutionTime to measure task execution time in milliseconds
 	TaskExecutionTime(workerName string, start time.Time, end time.Time)
-}
-
-// ChannelWatcher is a simply Object who will watch all given queues (channels)
-// and report them calling EnqueuedMessages from Metric
-type ChannelWatcher struct {
-	// Channels A map of key strings (channel name) and value a channel
-	// Can be used with return value from Executor.StartWorkers()
-	Channels map[string]struct{}
-	// Ticker is a channel ticker that will trig the watcher to report metrics
-	// (Recommended time 10 seconds)
-	Ticker <-chan time.Time
-	// Metric impl to be used.
-	Metric Metric
-}
-
-func NewChannelWatcher(channels map[string]struct{}, ticker <-chan time.Time, metric Metric) *ChannelWatcher {
-	cw := new(ChannelWatcher)
-
-	cw.Channels = channels
-	cw.Metric = metric
-	cw.Ticker = ticker
-
-	return cw
-}
-
-func (w *ChannelWatcher) Start() {
-	go func() {
-		for {
-			<-w.Ticker
-
-			for key, value := range w.Channels {
-				len := reflect.ValueOf(value).Len()
-				go w.Metric.EnqueuedMessages(len, key)
-			}
-		}
-	}()
 }
 
 // TODO metrics class. Mean to be used if you don't want metrics or don't implemented it yet
