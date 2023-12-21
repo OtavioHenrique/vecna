@@ -40,10 +40,13 @@ func NewReader(compressionType string, reader io.Reader) (io.Reader, error) {
 
 type AdaptFn func(interface{}, map[string]interface{}) ([]byte, error)
 
+// Decompressor is a generic task capable of decompress []byte compressed with ZSTD or GZIP
 type Decompressor struct {
+	// Compression type which it will focus on decompressing. Must be either zstd or gzip
 	compressionType string
-	adaptFn         AdaptFn
-	logger          *slog.Logger
+	// adaptFn which will receive interface{} from previous worker and return []byte to be decompressed
+	adaptFn AdaptFn
+	logger  *slog.Logger
 }
 
 func NewDecompressor(compressionType string, adaptFn AdaptFn, logger *slog.Logger) *Decompressor {
@@ -56,6 +59,7 @@ func NewDecompressor(compressionType string, adaptFn AdaptFn, logger *slog.Logge
 	return d
 }
 
+// The return data from Run will be []byte decompressed
 func (d *Decompressor) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
 	b, err := d.adaptFn(input, meta)
 

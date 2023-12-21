@@ -76,8 +76,17 @@ Some basic tasks are already provided (and welcome):
 * [SQS Consumer](pkg/task/sqs_consumer.go) (to use with [SQS Deleter](pkg/task/sqs_deleter.go))
 * [S3 Uploader](pkg/task/s3_uploader.go)
 * [S3 Downloader](pkg/task/s3_downloader.go)
+* [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
 
 But you're heavy encouraged to code your business logic too.
+
+## Creating your own tasks
+
+To create your own task is simple, just follow the [Task interface](pkg/task/task.go), a simple `Run()`` method is needed.
+
+```
+Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
+```
 
 ## Monitoring
 
@@ -110,6 +119,7 @@ watcher.Start()
 
 Currently in development:
 
-* Data decompressor/compressor
+* Data compressor
+* Accumulator
 * SQS Producer
 * Kafka Consumer/Producer
