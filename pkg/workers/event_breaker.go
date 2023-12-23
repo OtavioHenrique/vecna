@@ -8,10 +8,18 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/metrics"
 )
 
+// EventBreakerWorker transforms any given output from previous worker which is an array of data into multiple events to the next worker.
+// Example:
+// Previous worker output: []string{"a", "b", "c"}
+// Output to next worker (After pass throught EventBreakerWorker): "a", "b", "c" (multiple messages)
 type EventBreakerWorker struct {
-	name      string
-	Input     chan *WorkerData
-	Output    chan *WorkerData
+	// Event Name
+	name string
+	// Input chan
+	Input chan *WorkerData
+	// Output Chan
+	Output chan *WorkerData
+	// Number of goroutines executing this task
 	numWorker int
 	logger    *slog.Logger
 	metric    metrics.Metric
@@ -19,6 +27,7 @@ type EventBreakerWorker struct {
 	started   bool
 }
 
+// NewEventBreakerWorker created this worker. Receives: Worker Name, Number of goroutines to execute, logger and metrics
 func NewEventBreakerWorker(name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker {
 	w := new(EventBreakerWorker)
 

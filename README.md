@@ -5,51 +5,95 @@ Vecna is a tiny library to build high concurrent application easily and focousin
 
 ### How to use
 
-To use just create your workers and tasks as you want.
+To use just create your workers and tasks as you want. Check my examples on [examples folder](examples/).
 
 ```go
-sqsProducer := workers.NewProducerWorker(
+metric := &metrics.TODO{}
+logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+sess, err := session.NewSession(&aws.Config{
+    Region: aws.String("us-east-1"),
+})
+
+if err != nil {
+    panic(err)
+}
+
+sqsClient := sqs.New(sess)
+
+sqsConsumer := workers.NewProducerWorker(
     "Event Created",
-    task.NewSQSConsumer(client, logger, opts),
+    task.NewSQSConsumer(sqsClient, logger, &task.SQSConsumerOpts{
+        QueueName: "any-queue",
+    }),
     10,
     logger,
     metric,
-    time.NewTicker(500 * time.Millisecond),
+    500*time.Millisecond,
 )
 
-s3Downloader := workers.NewBidirectionalWorker(
+breaker := workers.NewEventBreakerWorker(
+    "break sqs messages",
+    1,
+    logger,
+    metric,
+)
+
+s3Client := s3.New(sess)
+
+s3Downloader := workers.NewBiDirectionalWorker(
     "Download Data",
     task.NewS3Downloader(
-        client, 
-        "bucket", 
+        s3Client,
+        "bucket",
         func(i interface{}, _ map[string]interface{}) (*string, error) {
-				task, _ := i.(SQSOutput)
+            task, _ := i.(*task.SQSConsumerOutput)
 
-				return &task.Data.Path, nil
-		},
+            return task.Content, nil
+        },
         logger,
-        metric),
+    ),
+    5,
+    logger,
+    metric,
+)
+
+decompressor := workers.NewBiDirectionalWorker(
+    "Decompress Data",
+    task.NewDecompressor(
+        "gzip",
+        func(i interface{}, _ map[string]interface{}) ([]byte, error) {
+            task, _ := i.(*task.S3DownloaderOutput)
+
+            return task.Data, nil
+        },
+        logger,
+    ),
+    5,
+    logger,
+    metric,
 )
 
 businessLogic := workers.NewConsumerWorker(
     "Process Data",
-    NewSomeBusinessTask(),
+    &Printer{},
     5,
     logger,
-    metric
+    metric,
 )
 
 executor := executor.NewExecutor(
     []executor.ExecutorInput{
-        {Worker: sqsProducer, QueueSize: 10},
+        {Worker: sqsConsumer, QueueSize: 10},
+        {Worker: breaker, QueueSize: 10},
         {Worker: s3Downloader, QueueSize: 10},
+        {Worker: decompressor, QueueSize: 10},
         {Worker: businessLogic, QueueSize: 10},
     },
-    logger
+    logger,
 )
 
-// StartWorkers return a map with queues info to later be used by channel watcher if needed
-queues := executor.StartWorkers(context.TODO())
+executor.StartWorkers(context.TODO())
 ```
 
 In this example, a simple logic is being made, consume message from SQS, Download object from S3 (Based on SQS Consumer output), and process it with some busines logic (custom Task). 
@@ -70,6 +114,7 @@ Currently three workers types are provided (more to come):
 * [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
 * [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
 * [BiDirecional](pkg/workers/bi_directional.go): Worker pool who consumes from a channel, execute tasks and produces output on other channel.
+* [EventBreaker](pkg/workers/event_breaker.go): Worker pool who consumes from a queue where results from previous worker are lists, breaks it in varios events to the next.
 
 Some basic tasks are already provided (and welcome):
 
@@ -77,6 +122,7 @@ Some basic tasks are already provided (and welcome):
 * [S3 Uploader](pkg/task/s3_uploader.go)
 * [S3 Downloader](pkg/task/s3_downloader.go)
 * [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
+* [Json marshal/unmarshal](pkg/task/json.go)
 
 But you're heavy encouraged to code your business logic too.
 
