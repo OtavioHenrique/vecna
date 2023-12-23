@@ -122,6 +122,7 @@ Some basic tasks are already provided (and welcome):
 * [S3 Uploader](pkg/task/s3_uploader.go)
 * [S3 Downloader](pkg/task/s3_downloader.go)
 * [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
+* [Compressor (gzip/zstd)](pkg/task/compressor.go)
 * [Json marshal/unmarshal](pkg/task/json.go)
 
 But you're heavy encouraged to code your business logic too.
