@@ -34,7 +34,7 @@ func CompressZstd(s string) []byte {
 func TestDecompressor_Run(t *testing.T) {
 	type fields struct {
 		compressionType string
-		adaptFn         task.AdaptFn
+		adaptFn         task.DecompressAdaptFn
 		logger          *slog.Logger
 	}
 	type args struct {
