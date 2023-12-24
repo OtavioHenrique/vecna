@@ -19,7 +19,7 @@ type SQSProducerOpts struct {
 }
 
 // Function which will receive output from previous worker and metadata, and return the message string to be sent to SQS
-type SqsProducerAdaptFn func(interface{}, map[string]interface{}) (string, error)
+type SqsProducerAdaptFn func(interface{}, map[string]interface{}) (*string, error)
 
 // Optional SqsProducerMsgAttFn will return a map of string (name) and MessageAttributeValues to be used as SQS message attribute if wanted.
 // Ref https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html
@@ -36,7 +36,7 @@ type SQSProducer struct {
 	queueURL            *string
 }
 
-func NewSQSProducer(client sqsiface.SQSAPI, adaptFn SqsProducerAdaptFn, msgAttFn SqsProducerMsgAttFn, logger *slog.Logger, opts *SQSProducerOpts, queueURL *string) *SQSProducer {
+func NewSQSProducer(client sqsiface.SQSAPI, adaptFn SqsProducerAdaptFn, msgAttFn SqsProducerMsgAttFn, logger *slog.Logger, opts *SQSProducerOpts) *SQSProducer {
 	p := new(SQSProducer)
 
 	p.client = client
@@ -88,9 +88,9 @@ func (c *SQSProducer) Run(_ context.Context, i interface{}, meta map[string]inte
 	_, err = c.client.SendMessage(&sqs.SendMessageInput{
 		DelaySeconds:      c.opts.DelaySeconds,
 		MessageAttributes: msgAttributes,
-		MessageBody:       aws.String(msg),
+		MessageBody:       msg,
 		QueueUrl:          c.queueURL,
 	})
 
-	return nil, nil
+	return nil, err
 }
