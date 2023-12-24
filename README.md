@@ -154,7 +154,5 @@ prometheus.NewRegistry().MustRegister(
 
 Currently in development:
 
-* Data compressor
 * Accumulator
-* SQS Producer
 * Kafka Consumer/Producer
