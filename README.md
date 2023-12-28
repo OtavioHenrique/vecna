@@ -1,18 +1,18 @@
 Vecna
 =======
 
-Vecna is a tiny library to build high concurrent application easily and focousing on business. It already comes with handful general tasks created.
+Vecna is a tiny library to build high concurrent applications easily and focusing on business. It already comes with a handful of general tasks created.
 
 ### How it works
 
 Vecna is based on two units, `workers` and `tasks`. 
 
 * `workers` are a pool of goroutines who interact with channels and execute `tasks`.
-* `tasks` are objects capable of execute some computation.
+* `tasks` are objects capable of executing some computation.
 
 Workers will usually listen and produce on given channels, and execute tasks based on them. 
 
-Currently three workers types are provided (more to come):
+Currently, three workers types are provided (more to come):
 
 * [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
 * [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
@@ -28,7 +28,22 @@ Some basic tasks are already provided (and welcome):
 * [Compressor (gzip/zstd)](pkg/task/compressor.go)
 * [Json marshal/unmarshal](pkg/task/json.go)
 
-But you're heavy encouraged to code your business logic too.
+But you're heavily encouraged to code your business logic too.
+
+## Monitoring
+
+Vecna already comes with a solid set of logs needed to debug and monitor and with a basic interface `Metric` which recommended for use is with Prometheus. If you don't want to use metrics now, just use the `metrics.TODO` provided.
+
+You can use the `metrics.PromMetrics`, just instantiate using `metrics.NewPromMetrics()` and register each metric on your Prometheus registry.
+
+```
+vecnaMetrics := metrics.NewPromMetrics()
+prometheus.NewRegistry().MustRegister(
+    vecnaMetrics.EnqueuedMsgs,
+    vecnaMetrics.ConsumedMsg
+    ...
+)
+````
 
 ### How to use
 
@@ -133,21 +148,6 @@ To create your own task is simple, just follow the [Task interface](pkg/task/tas
 
 ```
 Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
-```
-
-## Monitoring
-
-Vecna already come with a solid set of log needed to debug and monitor and with a basic interface `Metric` which recommended use is with prometheus. If you don't want to use metrics now, just use the `metrics.TODO` provided.
-
-You can use the `metrics.PromMetrics`, just instantiate using `metrics.NewPromMetrics()` and register each metric on your prometheus registry.
-
-```
-vecnaMetrics := metrics.NewPromMetrics()
-prometheus.NewRegistry().MustRegister(
-    vecnaMetrics.EnqueuedMsgs,
-    vecnaMetrics.ConsumedMsg
-    ...
-)
 ```
 
 ### Development
