@@ -1,4 +1,4 @@
-![Vecna Logo](https://i.imgur.com/BttdRu0.jpg)
+<center><img src='https://i.imgur.com/BttdRu0.jpg' width='250'></center>
 
 
 Vecna
