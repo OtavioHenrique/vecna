@@ -1,4 +1,4 @@
-![Vecna Logo](https://github.com/OtavioHenrique/vecna/assets/11178512/6ff5bd01-1fd7-40a7-a25b-a782e7026be8)
+![Vecna Logo](https://github.com/OtavioHenrique/vecna/assets/11178512/7ae871a7-aa35-4978-bc3d-2f3007fe1a5f)
 
 
 Vecna
