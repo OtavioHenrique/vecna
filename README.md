@@ -1,7 +1,34 @@
 Vecna
 =======
 
-Vecna is a tiny library to build high concurrent application easily and focousing on business.
+Vecna is a tiny library to build high concurrent application easily and focousing on business. It already comes with handful general tasks created.
+
+### How it works
+
+Vecna is based on two units, `workers` and `tasks`. 
+
+* `workers` are a pool of goroutines who interact with channels and execute `tasks`.
+* `tasks` are objects capable of execute some computation.
+
+Workers will usually listen and produce on given channels, and execute tasks based on them. 
+
+Currently three workers types are provided (more to come):
+
+* [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
+* [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
+* [BiDirecional](pkg/workers/bi_directional.go): Worker pool who consumes from a channel, execute tasks and produces output on other channel.
+* [EventBreaker](pkg/workers/event_breaker.go): Worker pool who consumes from a queue where results from previous worker are lists, breaks it in varios events to the next.
+
+Some basic tasks are already provided (and welcome):
+
+* [SQS Consumer](pkg/task/sqs_consumer.go) (to use with [SQS Deleter](pkg/task/sqs_deleter.go))
+* [S3 Uploader](pkg/task/s3_uploader.go)
+* [S3 Downloader](pkg/task/s3_downloader.go)
+* [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
+* [Compressor (gzip/zstd)](pkg/task/compressor.go)
+* [Json marshal/unmarshal](pkg/task/json.go)
+
+But you're heavy encouraged to code your business logic too.
 
 ### How to use
 
@@ -99,33 +126,6 @@ executor.StartWorkers(context.TODO())
 In this example, a simple logic is being made, consume message from SQS, Download object from S3 (Based on SQS Consumer output), and process it with some busines logic (custom Task). 
 
 The use of Executor is needed to Start workers, and later Stop() if wanted.
-
-### How it works
-
-Vecna is based on two units, `workers` and `tasks`. 
-
-* `workers` are a pool of goroutines who interact with channels and execute `tasks`.
-* `tasks` are objects capable of execute some computation.
-
-Workers will usually listen and produce on given channels, and execute tasks based on them. 
-
-Currently three workers types are provided (more to come):
-
-* [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
-* [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
-* [BiDirecional](pkg/workers/bi_directional.go): Worker pool who consumes from a channel, execute tasks and produces output on other channel.
-* [EventBreaker](pkg/workers/event_breaker.go): Worker pool who consumes from a queue where results from previous worker are lists, breaks it in varios events to the next.
-
-Some basic tasks are already provided (and welcome):
-
-* [SQS Consumer](pkg/task/sqs_consumer.go) (to use with [SQS Deleter](pkg/task/sqs_deleter.go))
-* [S3 Uploader](pkg/task/s3_uploader.go)
-* [S3 Downloader](pkg/task/s3_downloader.go)
-* [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
-* [Compressor (gzip/zstd)](pkg/task/compressor.go)
-* [Json marshal/unmarshal](pkg/task/json.go)
-
-But you're heavy encouraged to code your business logic too.
 
 ## Creating your own tasks
 
