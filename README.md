@@ -1,4 +1,5 @@
-<center><img src='https://github.com/OtavioHenrique/vecna/assets/11178512/a1e9e52a-d468-4c75-92e0-874b6509502b' width='250'></center>
+<center>![Vecna Logo](https://github.com/OtavioHenrique/vecna/assets/11178512/6ff5bd01-1fd7-40a7-a25b-a782e7026be8)</center>
+
 
 Vecna
 =======
