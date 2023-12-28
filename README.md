@@ -1,5 +1,5 @@
+<center><img src='https://github.com/OtavioHenrique/vecna/assets/11178512/a1e9e52a-d468-4c75-92e0-874b6509502b' width='250'></center>
 
-<center><img src='https://github.com/OtavioHenrique/vecna/assets/11178512/5e36a75b-f873-4b89-b8ce-bfe3e55b39e1' width='250'></center>
 Vecna
 =======
 
