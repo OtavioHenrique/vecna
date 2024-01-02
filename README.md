@@ -4,18 +4,24 @@
 Vecna
 =======
 
-Vecna is a tiny library to build high concurrent applications easily and focusing on business. It already comes with a handful of general tasks created.
+Vecna is a tiny library to build high concurrent applications easily and focusing on business. It already comes with a handful of general tasks created. 
+
+**Batteries Included!**
 
 ### How it works
 
-Vecna is based on two units, `workers` and `tasks`. 
+Vecna is based on two abstractions, `workers` and `tasks`. 
 
 * `workers` are a pool of goroutines who interact with channels and execute `tasks`.
-* `tasks` are objects capable of executing some computation.
+* `tasks` are objects capable of executing some computation and return a value.
 
-Workers will usually listen and produce on given channels, and execute tasks based on them. 
+Workers will listen and produce on given channels, and execute tasks that you want with results from previous workers. In this way you'll built concurrent applications easily, **without needing to deal with concurrency part**, you only need to create your tasks as you want and joy.
 
-Currently, three workers types are provided (more to come):
+![Vecna Arch Overview](doc/img/vecna_arch_overview.png)
+
+### Tasks Shipped with Vecna (More coming!)
+
+Currently, three workers types are provided:
 
 * [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
 * [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
@@ -151,11 +157,11 @@ To create your own task is simple, just follow the [Task interface](pkg/task/tas
 
 ```
 Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
-```
+``` 
 
 ### Development
 
 Currently in development:
 
-* Accumulator
+* Accumulator Worker
 * Kafka Consumer/Producer
