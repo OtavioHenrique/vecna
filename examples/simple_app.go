@@ -9,11 +9,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	awsS3 "github.com/aws/aws-sdk-go/service/s3"
+	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/otaviohenrique/vecna/pkg/executor"
 	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/compression"
+	"github.com/otaviohenrique/vecna/pkg/task/s3"
+	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
@@ -39,11 +41,11 @@ func main() {
 		panic(err)
 	}
 
-	sqsClient := sqs.New(sess)
+	sqsClient := awsSqs.New(sess)
 
 	sqsConsumer := workers.NewProducerWorker(
 		"Event Created",
-		task.NewSQSConsumer(sqsClient, logger, &task.SQSConsumerOpts{
+		sqs.NewSQSConsumer(sqsClient, logger, &sqs.SQSConsumerOpts{
 			QueueName: "any-queue",
 		}),
 		10,
@@ -59,15 +61,15 @@ func main() {
 		metric,
 	)
 
-	s3Client := s3.New(sess)
+	s3Client := awsS3.New(sess)
 
 	s3Downloader := workers.NewBiDirectionalWorker(
 		"Download Data",
-		task.NewS3Downloader(
+		s3.NewS3Downloader(
 			s3Client,
 			"bucket",
 			func(i interface{}, _ map[string]interface{}) (*string, error) {
-				task, _ := i.(*task.SQSConsumerOutput)
+				task, _ := i.(*sqs.SQSConsumerOutput)
 
 				return task.Content, nil
 			},
@@ -80,10 +82,10 @@ func main() {
 
 	decompressor := workers.NewBiDirectionalWorker(
 		"Decompress Data",
-		task.NewDecompressor(
+		compression.NewDecompressor(
 			"gzip",
 			func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				task, _ := i.(*task.S3DownloaderOutput)
+				task, _ := i.(*s3.S3DownloaderOutput)
 
 				return task.Data, nil
 			},

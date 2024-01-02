@@ -1,4 +1,4 @@
-package task_test
+package sqs_test
 
 import (
 	"context"
@@ -9,29 +9,29 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 )
 
 type MockSQS struct {
 	sqsiface.SQSAPI
 	QueueURL         string
-	calledWith       []sqs.ReceiveMessageInput
+	calledWith       []awsSqs.ReceiveMessageInput
 	ExpectedResponse string
 	ReceiptHandle    string
 	receiveCount     int
 	WantErr          bool
 }
 
-func (s *MockSQS) GetQueueUrl(input *sqs.GetQueueUrlInput) (*sqs.GetQueueUrlOutput, error) {
-	output := new(sqs.GetQueueUrlOutput)
+func (s *MockSQS) GetQueueUrl(input *awsSqs.GetQueueUrlInput) (*awsSqs.GetQueueUrlOutput, error) {
+	output := new(awsSqs.GetQueueUrlOutput)
 	output.QueueUrl = aws.String(*input.QueueName)
 
 	return output, nil
 }
 
-func (s *MockSQS) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
+func (s *MockSQS) ReceiveMessage(input *awsSqs.ReceiveMessageInput) (*awsSqs.ReceiveMessageOutput, error) {
 	if s.WantErr == true {
 		return nil, errors.New("test-err")
 	}
@@ -40,10 +40,10 @@ func (s *MockSQS) ReceiveMessage(input *sqs.ReceiveMessageInput) (*sqs.ReceiveMe
 
 	s.receiveCount++
 
-	output := new(sqs.ReceiveMessageOutput)
-	msg := sqs.Message{Body: aws.String(s.ExpectedResponse), ReceiptHandle: aws.String(s.ReceiptHandle)}
+	output := new(awsSqs.ReceiveMessageOutput)
+	msg := awsSqs.Message{Body: aws.String(s.ExpectedResponse), ReceiptHandle: aws.String(s.ReceiptHandle)}
 
-	output.Messages = []*sqs.Message{&msg}
+	output.Messages = []*awsSqs.Message{&msg}
 	return output, nil
 }
 
@@ -51,7 +51,7 @@ func TestSQSConsumer_Run(t *testing.T) {
 	type fields struct {
 		client sqsiface.SQSAPI
 		logger *slog.Logger
-		opts   *task.SQSConsumerOpts
+		opts   *sqs.SQSConsumerOpts
 	}
 	type args struct {
 		in0  context.Context
@@ -69,7 +69,7 @@ func TestSQSConsumer_Run(t *testing.T) {
 		{"It correct returns expected message", fields{
 			client: &MockSQS{QueueURL: "any-queue", ExpectedResponse: "message", ReceiptHandle: "receipt-handler", WantErr: false},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &task.SQSConsumerOpts{QueueName: "any-queue", VisibilityTimeout: 100, MaxNumberOfMessages: 100},
+			opts:   &sqs.SQSConsumerOpts{QueueName: "any-queue", VisibilityTimeout: 100, MaxNumberOfMessages: 100},
 		}, args{
 			in0:  context.TODO(),
 			in1:  struct{}{},
@@ -78,7 +78,7 @@ func TestSQSConsumer_Run(t *testing.T) {
 		{"It correct returns error", fields{
 			client: &MockSQS{QueueURL: "any-queue", ExpectedResponse: "message", WantErr: true},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &task.SQSConsumerOpts{QueueName: "any-queue", VisibilityTimeout: 100, MaxNumberOfMessages: 100},
+			opts:   &sqs.SQSConsumerOpts{QueueName: "any-queue", VisibilityTimeout: 100, MaxNumberOfMessages: 100},
 		}, args{
 			in0:  context.TODO(),
 			in1:  struct{}{},
@@ -88,7 +88,7 @@ func TestSQSConsumer_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := task.NewSQSConsumer(
+			c := sqs.NewSQSConsumer(
 				tt.fields.client,
 				tt.fields.logger,
 				tt.fields.opts,
@@ -100,8 +100,8 @@ func TestSQSConsumer_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(*got.([]*task.SQSConsumerOutput)[0].Content, tt.want) {
-				t.Errorf("SQSConsumer.Run() = %v, want %v", *got.([]*task.SQSConsumerOutput)[0].Content, tt.want)
+			if !tt.wantErr && !reflect.DeepEqual(*got.([]*sqs.SQSConsumerOutput)[0].Content, tt.want) {
+				t.Errorf("SQSConsumer.Run() = %v, want %v", *got.([]*sqs.SQSConsumerOutput)[0].Content, tt.want)
 			}
 
 			if !tt.wantErr && !reflect.DeepEqual(tt.wantMetadata, tt.args.meta) {

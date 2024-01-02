@@ -24,12 +24,12 @@ Currently, three workers types are provided (more to come):
 
 Some basic tasks are already provided (and welcome):
 
-* [SQS Consumer](pkg/task/sqs_consumer.go) (to use with [SQS Deleter](pkg/task/sqs_deleter.go))
-* [S3 Uploader](pkg/task/s3_uploader.go)
-* [S3 Downloader](pkg/task/s3_downloader.go)
-* [Decompressor (gzip/zstd)](pkg/task/decompressor.go)
-* [Compressor (gzip/zstd)](pkg/task/compressor.go)
-* [Json marshal/unmarshal](pkg/task/json.go)
+* [SQS Consumer](pkg/task/sqs/sqs_consumer.go) (to use with [SQS Deleter](pkg/task/sqs/sqs_deleter.go))
+* [S3 Uploader](pkg/task/s3/s3_uploader.go)
+* [S3 Downloader](pkg/task/s3/s3_downloader.go)
+* [Decompressor (gzip/zstd)](pkg/task/compression/decompressor.go)
+* [Compressor (gzip/zstd)](pkg/task/compression/compressor.go)
+* [Json marshal/unmarshal](pkg/task/json/json.go)
 
 But you're heavily encouraged to code your business logic too.
 

@@ -1,4 +1,4 @@
-package task_test
+package json_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/json"
 )
 
 type TestStructJson struct {
@@ -17,8 +17,8 @@ type TestStructJson struct {
 
 func TestJsonUnmarshaller_Run(t *testing.T) {
 	type fields struct {
-		jsonAdaptFn  task.JsonAdaptFn
-		jsonTargetFn task.JsonTargetFn
+		jsonAdaptFn  json.JsonAdaptFn
+		jsonTargetFn json.JsonTargetFn
 		logger       *slog.Logger
 	}
 	type args struct {
@@ -79,7 +79,7 @@ func TestJsonUnmarshaller_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := task.NewJsonUnmarshaller(
+			u := json.NewJsonUnmarshaller(
 				tt.fields.jsonAdaptFn,
 				tt.fields.jsonTargetFn,
 				tt.fields.logger,
@@ -98,7 +98,7 @@ func TestJsonUnmarshaller_Run(t *testing.T) {
 
 func TestJsonMarshaller_Run(t *testing.T) {
 	type fields struct {
-		jsonMarshalAdaptFn task.JsonMarshalAdaptFn
+		jsonMarshalAdaptFn json.JsonMarshalAdaptFn
 		logger             *slog.Logger
 	}
 	type args struct {
@@ -140,7 +140,7 @@ func TestJsonMarshaller_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := task.NewJsonMarshaller(
+			u := json.NewJsonMarshaller(
 				tt.fields.jsonMarshalAdaptFn,
 				tt.fields.logger,
 			)

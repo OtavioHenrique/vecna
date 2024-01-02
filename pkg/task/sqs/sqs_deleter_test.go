@@ -1,4 +1,4 @@
-package task_test
+package sqs_test
 
 import (
 	"context"
@@ -8,32 +8,32 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 )
 
 type MockSQSDeleter struct {
 	sqsiface.SQSAPI
-	CalledWith []sqs.DeleteMessageInput
+	CalledWith []awsSqs.DeleteMessageInput
 	WantErr    bool
 }
 
-func (s *MockSQSDeleter) GetQueueUrl(input *sqs.GetQueueUrlInput) (*sqs.GetQueueUrlOutput, error) {
-	output := new(sqs.GetQueueUrlOutput)
+func (s *MockSQSDeleter) GetQueueUrl(input *awsSqs.GetQueueUrlInput) (*awsSqs.GetQueueUrlOutput, error) {
+	output := new(awsSqs.GetQueueUrlOutput)
 	output.QueueUrl = aws.String(*input.QueueName)
 
 	return output, nil
 }
 
-func (s *MockSQSDeleter) DeleteMessage(input *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+func (s *MockSQSDeleter) DeleteMessage(input *awsSqs.DeleteMessageInput) (*awsSqs.DeleteMessageOutput, error) {
 	if s.WantErr == true {
 		return nil, errors.New("delete-message-error")
 	}
 
 	s.CalledWith = append(s.CalledWith, *input)
 
-	return &sqs.DeleteMessageOutput{}, nil
+	return &awsSqs.DeleteMessageOutput{}, nil
 }
 
 func TestSQSDeleter_Run(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 		client  sqsiface.SQSAPI
 		logger  *slog.Logger
 		adaptFn func(interface{}, map[string]interface{}) (*string, error)
-		opts    *task.SQSDeleterOpts
+		opts    *sqs.SQSDeleterOpts
 	}
 	type args struct {
 		in0   context.Context
@@ -62,7 +62,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 
 				return &str, nil
 			},
-			opts: &task.SQSDeleterOpts{QueueName: "queue-name"},
+			opts: &sqs.SQSDeleterOpts{QueueName: "queue-name"},
 		}, args{
 			in0:   context.TODO(),
 			input: "message-handler",
@@ -77,7 +77,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 
 				return &str, nil
 			},
-			opts: &task.SQSDeleterOpts{QueueName: "queue-name"},
+			opts: &sqs.SQSDeleterOpts{QueueName: "queue-name"},
 		}, args{
 			in0:   context.TODO(),
 			input: "message-handler",
@@ -90,7 +90,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 			adaptFn: func(_ interface{}, _ map[string]interface{}) (*string, error) {
 				return nil, errors.New("error-on-adaptfn")
 			},
-			opts: &task.SQSDeleterOpts{QueueName: "queue-name"},
+			opts: &sqs.SQSDeleterOpts{QueueName: "queue-name"},
 		}, args{
 			in0:   context.TODO(),
 			input: "message-handler",
@@ -100,7 +100,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := task.NewSQSDeleter(
+			s := sqs.NewSQSDeleter(
 				tt.fields.client,
 				tt.fields.logger,
 				tt.fields.adaptFn,
