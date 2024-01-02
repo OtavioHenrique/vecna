@@ -13,20 +13,20 @@ Vecna is a tiny library to build high concurrent applications easily and focusin
 Vecna is based on two abstractions, `workers` and `tasks`. 
 
 * `workers` are a pool of goroutines who interact with channels and execute `tasks`.
-* `tasks` are objects capable of executing some computation and return a value.
+* `tasks` are objects capable of executing some computation and returning a value.
 
-Workers will listen and produce on given channels, and execute tasks that you want with results from previous workers. In this way you'll built concurrent applications easily, **without needing to deal with concurrency part**, you only need to create your tasks as you want and joy.
+Workers will listen and produce on given channels, and execute tasks that you want with results from previous workers. In this way you'll built concurrent applications easily, **without needing to deal with the concurrency part**, you only need to create your tasks as you want and joy.
 
 ![Vecna Arch Overview](doc/img/vecna_arch_overview.png)
 
 ### Tasks Shipped with Vecna (More coming!)
 
-Currently, three workers types are provided:
+Currently, three worker types are provided:
 
 * [Producer](pkg/workers/producer.go): Worker pool who only produces messages to a channel based on `Task` execution response
 * [Consumer](pkg/workers/consumer.go): Worker pool who only consume for a channel and execute tasks.
-* [BiDirecional](pkg/workers/bi_directional.go): Worker pool who consumes from a channel, execute tasks and produces output on other channel.
-* [EventBreaker](pkg/workers/event_breaker.go): Worker pool who consumes from a queue where results from previous worker are lists, breaks it in varios events to the next.
+* [BiDirecional](pkg/workers/bi_directional.go): Worker pool who consumes from a channel, executes tasks and produces output on another channel.
+* [EventBreaker](pkg/workers/event_breaker.go): Worker pool who consumes from a queue where results from the previous worker are listed, breaks it in various events to the next.
 
 Some basic tasks are already provided (and welcome):
 
@@ -56,7 +56,7 @@ prometheus.NewRegistry().MustRegister(
 
 ### How to use
 
-To use just create your workers and tasks as you want. Check my examples on [examples folder](examples/).
+To use just create your workers and tasks as you want. Check examples on [examples folder](examples/).
 
 ```go
 metric := &metrics.TODO{}
@@ -153,7 +153,7 @@ The use of Executor is needed to Start workers, and later Stop() if wanted.
 
 ## Creating your own tasks
 
-To create your own task is simple, just follow the [Task interface](pkg/task/task.go), a simple `Run()`` method is needed.
+To create your own task is simple, just follow the [Task interface](pkg/task/task.go), and a simple `Run()`` method is needed.
 
 ```
 Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
