@@ -1,4 +1,4 @@
-package task
+package sqs
 
 import (
 	"context"

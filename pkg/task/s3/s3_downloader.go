@@ -1,4 +1,4 @@
-package task
+package s3
 
 import (
 	"context"

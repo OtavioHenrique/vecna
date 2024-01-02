@@ -1,4 +1,4 @@
-package task_test
+package s3_test
 
 import (
 	"bytes"
@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
+	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/s3"
 )
 
 type DataInput struct {
@@ -25,18 +25,18 @@ type S3TaskInput struct {
 
 type mockS3Client struct {
 	s3iface.S3API
-	calledWith       []s3.GetObjectInput
+	calledWith       []awsS3.GetObjectInput
 	ExpectedResponse string
 	BucketName       string
 	WantErr          bool
 }
 
-func (m *mockS3Client) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+func (m *mockS3Client) GetObject(input *awsS3.GetObjectInput) (*awsS3.GetObjectOutput, error) {
 	if m.WantErr == true {
 		return nil, errors.New("test-error-download-s3")
 	}
 
-	resp := new(s3.GetObjectOutput)
+	resp := new(awsS3.GetObjectOutput)
 
 	m.calledWith = append(m.calledWith, *input)
 	reader := bytes.NewReader([]byte(m.ExpectedResponse))
@@ -107,7 +107,7 @@ func TestS3Downloader_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := task.NewS3Downloader(
+			s := s3.NewS3Downloader(
 				tt.fields.client,
 				tt.fields.bucketName,
 				tt.fields.adaptFn,
@@ -119,7 +119,7 @@ func TestS3Downloader_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(string(got.(*task.S3DownloaderOutput).Data), tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(string(got.(*s3.S3DownloaderOutput).Data), tt.want) {
 				t.Errorf("S3Downloader.Run() = %v, want %v", got, tt.want)
 			}
 		})

@@ -1,4 +1,4 @@
-package task_test
+package sqs_test
 
 import (
 	"context"
@@ -9,29 +9,29 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 )
 
 type MockSQSProducer struct {
 	sqsiface.SQSAPI
 	QueueURL         string
-	CalledWith       []sqs.SendMessageInput
+	CalledWith       []awsSqs.SendMessageInput
 	ExpectedResponse string
 	ReceiptHandle    string
 	receiveCount     int
 	WantErr          bool
 }
 
-func (s *MockSQSProducer) GetQueueUrl(input *sqs.GetQueueUrlInput) (*sqs.GetQueueUrlOutput, error) {
-	output := new(sqs.GetQueueUrlOutput)
+func (s *MockSQSProducer) GetQueueUrl(input *awsSqs.GetQueueUrlInput) (*awsSqs.GetQueueUrlOutput, error) {
+	output := new(awsSqs.GetQueueUrlOutput)
 	output.QueueUrl = aws.String(*input.QueueName)
 
 	return output, nil
 }
 
-func (s *MockSQSProducer) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+func (s *MockSQSProducer) SendMessage(input *awsSqs.SendMessageInput) (*awsSqs.SendMessageOutput, error) {
 	if s.WantErr == true {
 		return nil, errors.New("test-err")
 	}
@@ -46,10 +46,10 @@ func (s *MockSQSProducer) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMes
 func TestSQSProducer_Run(t *testing.T) {
 	type fields struct {
 		client              sqsiface.SQSAPI
-		sqsProducerAdaptFn  task.SqsProducerAdaptFn
-		sqsProducerMsgAttfn task.SqsProducerMsgAttFn
+		sqsProducerAdaptFn  sqs.SqsProducerAdaptFn
+		sqsProducerMsgAttfn sqs.SqsProducerMsgAttFn
 		logger              *slog.Logger
-		opts                *task.SQSProducerOpts
+		opts                *sqs.SQSProducerOpts
 	}
 	type args struct {
 		in0  context.Context
@@ -72,7 +72,7 @@ func TestSQSProducer_Run(t *testing.T) {
 			},
 			sqsProducerMsgAttfn: nil,
 			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &task.SQSProducerOpts{QueueName: "queue-name"},
+			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
 			in0:  context.TODO(),
 			i:    "test-message",
@@ -86,7 +86,7 @@ func TestSQSProducer_Run(t *testing.T) {
 			},
 			sqsProducerMsgAttfn: nil,
 			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &task.SQSProducerOpts{QueueName: "queue-name"},
+			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
 			in0:  context.TODO(),
 			i:    "test-message",
@@ -101,7 +101,7 @@ func TestSQSProducer_Run(t *testing.T) {
 			},
 			sqsProducerMsgAttfn: nil,
 			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &task.SQSProducerOpts{QueueName: "queue-name"},
+			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
 			in0:  context.TODO(),
 			i:    "test-message",
@@ -114,8 +114,8 @@ func TestSQSProducer_Run(t *testing.T) {
 				msg, _ := i.(string)
 				return &msg, nil
 			},
-			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*sqs.MessageAttributeValue, error) {
-				messageAttributes := map[string]*sqs.MessageAttributeValue{
+			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*awsSqs.MessageAttributeValue, error) {
+				messageAttributes := map[string]*awsSqs.MessageAttributeValue{
 					"Meaning": {
 						DataType:    aws.String("String"),
 						StringValue: aws.String("42"),
@@ -125,7 +125,7 @@ func TestSQSProducer_Run(t *testing.T) {
 				return messageAttributes, nil
 			},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &task.SQSProducerOpts{QueueName: "queue-name"},
+			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
 			in0:  context.TODO(),
 			i:    "test-message",
@@ -138,11 +138,11 @@ func TestSQSProducer_Run(t *testing.T) {
 				msg, _ := i.(string)
 				return &msg, nil
 			},
-			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*sqs.MessageAttributeValue, error) {
+			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*awsSqs.MessageAttributeValue, error) {
 				return nil, errors.New("test-error-sqs-producer-msg-att-fn")
 			},
 			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &task.SQSProducerOpts{QueueName: "queue-name"},
+			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
 			in0:  context.TODO(),
 			i:    "test-message",
@@ -152,7 +152,7 @@ func TestSQSProducer_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := task.NewSQSProducer(
+			c := sqs.NewSQSProducer(
 				tt.fields.client,
 				tt.fields.sqsProducerAdaptFn,
 				tt.fields.sqsProducerMsgAttfn,

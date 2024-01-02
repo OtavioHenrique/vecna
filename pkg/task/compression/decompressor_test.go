@@ -1,4 +1,4 @@
-package task_test
+package compression_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/otaviohenrique/vecna/pkg/task/compression"
 )
 
 func CompressGzip(s string) []byte {
@@ -34,7 +34,7 @@ func CompressZstd(s string) []byte {
 func TestDecompressor_Run(t *testing.T) {
 	type fields struct {
 		compressionType string
-		adaptFn         task.DecompressAdaptFn
+		adaptFn         compression.DecompressAdaptFn
 		logger          *slog.Logger
 	}
 	type args struct {
@@ -105,7 +105,7 @@ func TestDecompressor_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := task.NewDecompressor(
+			d := compression.NewDecompressor(
 				tt.fields.compressionType,
 				tt.fields.adaptFn,
 				tt.fields.logger,
