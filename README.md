@@ -55,7 +55,7 @@ prometheus.NewRegistry().MustRegister(
 )
 ````
 
-### How to use
+## How to use
 
 To use just create your workers and tasks as you want. Check examples on [examples folder](examples/).
 
@@ -159,6 +159,35 @@ To create your own task is simple, just follow the [Task interface](pkg/task/tas
 ```
 Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
 ``` 
+
+## Extend Existent Code
+
+All workers after be initialized by `Executor` will return its input channel on method `InputCh()` you're able to put any message on it that your worker will read.
+
+```
+type MyInput struct {
+    Path string
+}
+
+s3Downloader := workers.NewBiDirectionalWorker(
+		"Download Data",
+		s3.NewS3Downloader(
+			s3Client,
+			"bucket",
+			func(i interface{}, _ map[string]interface{}) (*string, error) {
+				task, _ := i.(MyInput)
+
+				return task.Path, nil
+			},
+			logger,
+		),
+		5,
+		logger,
+		metric,
+	)
+
+
+```
 
 ### Development
 
