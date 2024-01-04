@@ -36,6 +36,7 @@ Some basic tasks are already provided (and welcome):
 * [Decompressor (gzip/zstd)](pkg/task/compression/decompressor.go)
 * [Compressor (gzip/zstd)](pkg/task/compression/compressor.go)
 * [Json marshal/unmarshal](pkg/task/json/json.go)
+* [HTTP Communicator to do HTTP requests](pkg/task/http_communicator/http_communicator.go)
 
 But you're heavily encouraged to code your business logic too.
 
