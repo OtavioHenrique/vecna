@@ -162,7 +162,7 @@ Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, 
 
 ## Extend Existent Code
 
-All workers after be initialized by `Executor` will return its input channel on method `InputCh()` you're able to put any message on it that your worker will read.
+All workers after be initialized by `Executor` will return its input channel on method `InputCh()` you're able to put any message on it that your worker will read, this allows you to migrate or put a vector pipeline inside your application.
 
 ```
 type MyInput struct {
@@ -186,7 +186,11 @@ s3Downloader := workers.NewBiDirectionalWorker(
 		metric,
 	)
 
+// Initialize other workers and call Executor
 
+inputCh := s3Downloader.InputCh()
+
+inputCh <- workers.WorkerData{Data: MyInput{Path: "path/to/s3", Metadata:  map[string]interface{}{}}}
 ```
 
 ### Development
