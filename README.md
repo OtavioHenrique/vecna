@@ -19,6 +19,12 @@ Workers will listen and produce on given channels, and execute tasks that you wa
 
 ![Vecna Arch Overview](doc/img/vecna_arch_overview.png)
 
+#### Metadata
+
+Every worker and task will share the same metadata about the information being processed, this allows every task to read&append important informations that may be useful in the future. Ex. [SQSConsumer](pkg/task/sqs/sqs_consumer.go) task append to metadata each message receiptHandle to later be deleted from SQS queue by another task ([SQSDeleter](pkg/task/sqs/sqs_deleter.go)).
+
+![Vecna Metadata](doc/img/vecna-meta.png)
+
 ### Tasks Shipped with Vecna (More coming!)
 
 Currently, three worker types are provided:
