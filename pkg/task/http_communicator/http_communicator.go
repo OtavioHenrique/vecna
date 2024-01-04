@@ -9,10 +9,12 @@ import (
 	"net/url"
 )
 
+// HTTPCommAdaptFn will receive input and context and should return RequestOpts containing all information about the request wanted
 type HTTPCommAdaptFn func(interface{}, map[string]interface{}) (RequestOpts, error)
 
 // RequestOpts contains all information needed to make the request
 type RequestOpts struct {
+	// Only accept POST, GET, HEAD, POSTFORM
 	Method      string
 	URL         string
 	ContentType string
@@ -20,6 +22,8 @@ type RequestOpts struct {
 	UrlValues   url.Values
 }
 
+// Response from Request.
+// Call Close() on Body is next worker responsability
 type RequestResponse struct {
 	Status     string
 	StatusCode int
