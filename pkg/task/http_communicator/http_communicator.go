@@ -1,4 +1,4 @@
-package requests
+package httpcommunicator
 
 import (
 	"context"
@@ -18,6 +18,13 @@ type RequestOpts struct {
 	ContentType string
 	Body        io.Reader
 	UrlValues   url.Values
+}
+
+type RequestResponse struct {
+	Status     string
+	StatusCode int
+	Body       io.ReadCloser
+	Header     http.Header
 }
 
 // HTTPCommunicator client performs HTTP requests based on RequestOpts returned by adaptFn
@@ -64,5 +71,10 @@ func (hc *HTTPCommunicator) Run(_ context.Context, i interface{}, ctx map[string
 		return nil, err
 	}
 
-	return resp, nil
+	return &RequestResponse{
+		Status:     resp.Status,
+		StatusCode: resp.StatusCode,
+		Body:       resp.Body,
+		Header:     resp.Header,
+	}, nil
 }
