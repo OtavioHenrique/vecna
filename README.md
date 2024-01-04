@@ -19,6 +19,12 @@ Workers will listen and produce on given channels, and execute tasks that you wa
 
 ![Vecna Arch Overview](doc/img/vecna_arch_overview.png)
 
+#### Metadata
+
+Every worker and task will share the same metadata about the information being processed, this allows every task to read&append important informations that may be useful in the future. Ex. [SQSConsumer](pkg/task/sqs/sqs_consumer.go) task append to metadata each message receiptHandle to later be deleted from SQS queue by another task ([SQSDeleter](pkg/task/sqs/sqs_deleter.go)).
+
+![Vecna Metadata](doc/img/vecna-meta.png)
+
 ### Tasks Shipped with Vecna (More coming!)
 
 Currently, three worker types are provided:
@@ -55,7 +61,7 @@ prometheus.NewRegistry().MustRegister(
 )
 ````
 
-### How to use
+## How to use
 
 To use just create your workers and tasks as you want. Check examples on [examples folder](examples/).
 
@@ -159,6 +165,39 @@ To create your own task is simple, just follow the [Task interface](pkg/task/tas
 ```
 Run(context.Context, interface{}, map[string]interface{}, string) (interface{}, error)
 ``` 
+
+## Extend Existent Code
+
+All workers after be initialized by `Executor` will return its input channel on method `InputCh()` you're able to put any message on it that your worker will read, this allows you to migrate or put a vector pipeline inside your application.
+
+```
+type MyInput struct {
+    Path string
+}
+
+s3Downloader := workers.NewBiDirectionalWorker(
+		"Download Data",
+		s3.NewS3Downloader(
+			s3Client,
+			"bucket",
+			func(i interface{}, _ map[string]interface{}) (*string, error) {
+				task, _ := i.(MyInput)
+
+				return task.Path, nil
+			},
+			logger,
+		),
+		5,
+		logger,
+		metric,
+	)
+
+// Initialize other workers and call Executor
+
+inputCh := s3Downloader.InputCh()
+
+inputCh <- workers.WorkerData{Data: MyInput{Path: "path/to/s3", Metadata:  map[string]interface{}{}}}
+```
 
 ### Development
 
