@@ -2,7 +2,7 @@ module github.com/otaviohenrique/vecna
 
 go 1.21.4
 
-require github.com/aws/aws-sdk-go v1.50.33
+require github.com/aws/aws-sdk-go v1.50.35
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
