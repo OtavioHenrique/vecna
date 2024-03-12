@@ -11,14 +11,12 @@ import (
 )
 
 // S3Uploader is a task which will upload a given data on the given path (key) of one bucket
-type S3Uploader struct {
+type S3Uploader[T *S3UploaderInput, K []byte] struct {
 	// S3 AWS client to be used
 	client s3iface.S3API
 	// Bucket name where all objects will be stored
 	bucketName string
-	// adaptFn will be called on Run() with input and should return a pointer to S3UploaderInput
-	adaptFn func(interface{}, map[string]interface{}) (*S3UploaderInput, error)
-	logger  *slog.Logger
+	logger     *slog.Logger
 }
 
 // S3UploaderInput is a envelope containing all the information needed to upload object to S3
@@ -30,7 +28,7 @@ type S3UploaderInput struct {
 	Content []byte
 }
 
-func NewS3Uploader(client s3iface.S3API, bucketName string, adaptFn func(interface{}, map[string]interface{}) (*S3UploaderInput, error), logger *slog.Logger) *S3Uploader {
+func NewS3Uploader[T *S3UploaderInput, K []byte](client s3iface.S3API, bucketName string, logger *slog.Logger) *S3Uploader[T, K] {
 	u := new(S3Uploader)
 
 	u.client = client

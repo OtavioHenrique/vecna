@@ -12,18 +12,18 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTaskBidirectional struct{}
+type MockTaskBidirectional[T string, K string] struct{}
 
-func (t *MockTaskBidirectional) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
-	return input, nil
+func (t *MockTaskBidirectional[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+	return K(input), nil
 }
 
 func TestBiDirectionalWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Input     chan *workers.WorkerData
-		Output    chan *workers.WorkerData
-		task      task.Task
+		Input     chan *workers.WorkerData[string]
+		Output    chan *workers.WorkerData[string]
+		task      task.Task[string, string]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -35,10 +35,10 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 	}{
 		{"Correct receive messages on input, calls  task and put on output", fields{
 			name:      "Test BiDirectionalWorker",
-			Input:     make(chan *workers.WorkerData),
-			Output:    make(chan *workers.WorkerData),
+			Input:     make(chan *workers.WorkerData[string]),
+			Output:    make(chan *workers.WorkerData[string]),
 			numWorker: 3,
-			task:      &MockTaskBidirectional{},
+			task:      &MockTaskBidirectional[string, string]{},
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			Metrics:   metrics.NewMockMetrics(),
 		}, []string{"Input1", "Input2", "Input3", "Input4", "Input5"}},
@@ -60,7 +60,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 
 			go func() {
 				for i := 0; i < len(tt.inputMsgs); i++ {
-					tt.fields.Input <- &workers.WorkerData{Data: []byte(tt.inputMsgs[i])}
+					tt.fields.Input <- &workers.WorkerData[string]{Data: tt.inputMsgs[i]}
 				}
 			}()
 
@@ -68,7 +68,7 @@ func TestBiDirectionalWorker_Start(t *testing.T) {
 			for i := 0; i < len(tt.inputMsgs); i++ {
 				msg := <-tt.fields.Output
 
-				outputMsgs = append(outputMsgs, string(msg.Data.([]byte)))
+				outputMsgs = append(outputMsgs, string(msg.Data))
 			}
 
 			if outputCount, expectedCount := len(outputMsgs), len(tt.inputMsgs); outputCount != expectedCount {
