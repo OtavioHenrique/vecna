@@ -23,7 +23,7 @@ type S3Uploader[T *S3UploaderInput, K []byte] struct {
 // Should be returned by adaptFn
 type S3UploaderInput struct {
 	// Path (Key) to upload the object
-	Path *string
+	Path string
 	// Bytes to be uploaded
 	Content []byte
 }
@@ -41,22 +41,24 @@ func NewS3Uploader[T *S3UploaderInput, K []byte](client s3iface.S3API, bucketNam
 // Run() will be called by worker and should return a pointer to TaskData.
 // It doesn't merge nothing on metadata given and only return errors if any
 func (s *S3Uploader[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
-	s.uploadObject(input)
+	err := s.uploadObject(input)
 
-	return nil, nil
+	return nil, err
 }
 
-func (s *S3Uploader[T, K]) uploadObject(input *S3UploaderInput) {
+func (s *S3Uploader[T, K]) uploadObject(input *S3UploaderInput) error {
 	_, err := s.client.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(*input.Path),
+		Key:    aws.String(input.Path),
 		Body:   aws.ReadSeekCloser(bytes.NewReader(input.Content)),
 	})
 
 	if err != nil {
 		s.logger.Error("error uploading object", "error", err, "path", input.Path)
-		return
+		return err
 	}
 
 	s.logger.Debug("object uploaded successfully", "path", input.Path)
+
+	return nil
 }
