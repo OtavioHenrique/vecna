@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"log/slog"
-	"reflect"
 
 	"github.com/otaviohenrique/vecna/pkg/metrics"
 )
@@ -12,13 +11,13 @@ import (
 // Example:
 // Previous worker output: []string{"a", "b", "c"}
 // Output to next worker (After pass throught EventBreakerWorker): "a", "b", "c" (multiple messages)
-type EventBreakerWorker struct {
+type EventBreakerWorker[T any, K any] struct {
 	// Event Name
 	name string
 	// Input chan
-	Input chan *WorkerData
+	Input chan *WorkerData[[]T]
 	// Output Chan
-	Output chan *WorkerData
+	Output chan *WorkerData[T]
 	// Number of goroutines executing this task
 	numWorker int
 	logger    *slog.Logger
@@ -28,8 +27,8 @@ type EventBreakerWorker struct {
 }
 
 // NewEventBreakerWorker created this worker. Receives: Worker Name, Number of goroutines to execute, logger and metrics
-func NewEventBreakerWorker(name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker {
-	w := new(EventBreakerWorker)
+func NewEventBreakerWorker[T any, K any](name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker[T, K] {
+	w := new(EventBreakerWorker[T, K])
 
 	w.name = name
 	w.numWorker = numWorker
@@ -40,39 +39,23 @@ func NewEventBreakerWorker(name string, numWorker int, logger *slog.Logger, metr
 	return w
 }
 
-func (w *EventBreakerWorker) Name() string {
+func (w *EventBreakerWorker[T, K]) Name() string {
 	return w.name
 }
 
-func (w *EventBreakerWorker) Started() bool {
+func (w *EventBreakerWorker[T, K]) Started() bool {
 	return w.started
 }
 
-func (w *EventBreakerWorker) InputCh() chan *WorkerData {
+func (w *EventBreakerWorker[T, K]) InputCh() chan *WorkerData[[]T] {
 	return w.Input
 }
 
-func (w *EventBreakerWorker) OutputCh() chan *WorkerData {
+func (w *EventBreakerWorker[T, K]) OutputCh() chan *WorkerData[T] {
 	return w.Output
 }
 
-func InterfaceToSlice(input interface{}) ([]interface{}, bool) {
-	val := reflect.ValueOf(input)
-
-	if val.Kind() != reflect.Slice {
-		return nil, false
-	}
-
-	result := make([]interface{}, val.Len())
-
-	for i := 0; i < val.Len(); i++ {
-		result[i] = val.Index(i).Interface()
-	}
-
-	return result, true
-}
-
-func (w *EventBreakerWorker) Start(ctx context.Context) {
+func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
 	w.logger.Info("starting event breaker worker", "worker_name", w.name)
 
 	for i := 0; i < w.numWorker; i++ {
@@ -85,11 +68,10 @@ func (w *EventBreakerWorker) Start(ctx context.Context) {
 
 					w.logger.Debug("Message Received", "worker_name", w.name)
 
-					converted, _ := InterfaceToSlice(msgIn.Data)
-
-					for _, v := range converted {
+					for _, v := range msgIn.Data {
 						go w.metric.ProducedMessage(w.name)
-						w.Output <- &WorkerData{Data: v, Metadata: msgIn.Metadata}
+
+						w.Output <- &WorkerData[T]{Data: v, Metadata: msgIn.Metadata}
 					}
 				case <-w.closeCh:
 					return
@@ -99,7 +81,7 @@ func (w *EventBreakerWorker) Start(ctx context.Context) {
 	}
 }
 
-func (w *EventBreakerWorker) Stop(ctx context.Context) {
+func (w *EventBreakerWorker[T, K]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Worker", "worker_name", w.name)
 
 	close(w.closeCh)

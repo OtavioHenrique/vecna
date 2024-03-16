@@ -15,7 +15,7 @@ type ConsumerWorker[T any, K any] struct {
 	// intput is the channel that input will be given to this pool of workers
 	Input chan *WorkerData[T]
 	// task to be executed by the worker
-	task task.Task[any, T]
+	task task.Task[T, K]
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
 	numWorker int
 	logger    *slog.Logger
@@ -24,11 +24,12 @@ type ConsumerWorker[T any, K any] struct {
 	started   bool
 }
 
-func NewConsumerWorker[T any, K any](name string, task task.Task[K, T], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker[T, K] {
+func NewConsumerWorker[T any, K any](name string, task task.Task[T, K], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker[T, K] {
 	w := new(ConsumerWorker[T, K])
 
 	w.name = name
 	w.numWorker = numWorker
+	w.task = task
 	w.logger = logger
 	w.metric = metric
 	w.closeCh = make(chan struct{})
