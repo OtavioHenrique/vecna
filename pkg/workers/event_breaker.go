@@ -55,6 +55,14 @@ func (w *EventBreakerWorker[T, K]) OutputCh() chan *WorkerData[T] {
 	return w.Output
 }
 
+func (w *EventBreakerWorker[T, K]) AddOutputCh(o chan *WorkerData[T]) {
+	w.Output = o
+}
+
+func (w *EventBreakerWorker[T, K]) AddInputCh(i chan *WorkerData[[]T]) {
+	w.Input = i
+}
+
 func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
 	w.logger.Info("starting event breaker worker", "worker_name", w.name)
 

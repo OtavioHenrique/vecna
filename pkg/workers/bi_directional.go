@@ -55,6 +55,14 @@ func (w *BiDirectionalWorker[T, K]) OutputCh() chan *WorkerData[K] {
 	return w.Output
 }
 
+func (w *BiDirectionalWorker[T, K]) AddOutputCh(o chan *WorkerData[K]) {
+	w.Output = o
+}
+
+func (w *BiDirectionalWorker[T, K]) AddInputCh(i chan *WorkerData[T]) {
+	w.Input = i
+}
+
 func (w *BiDirectionalWorker[T, K]) Start(ctx context.Context) {
 	w.logger.Info("starting bidirectional worker", "worker_name", w.name)
 

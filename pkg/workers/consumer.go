@@ -53,6 +53,14 @@ func (w *ConsumerWorker[T, K]) OutputCh() chan *WorkerData[K] {
 	return nil
 }
 
+func (w *ConsumerWorker[T, K]) AddOutputCh(o chan *WorkerData[K]) {
+	w.logger.Error("Consumer worker don't have output channel to add.")
+}
+
+func (w *ConsumerWorker[T, K]) AddInputCh(i chan *WorkerData[T]) {
+	w.Input = i
+}
+
 func (w *ConsumerWorker[T, K]) Start(ctx context.Context) {
 	w.logger.Info("starting consumer worker", "worker_name", w.name)
 

@@ -10,6 +10,8 @@ type Worker[T any, K any] interface {
 	Stop(context.Context)
 	Name() string
 	Started() bool
+	AddInputCh(chan *WorkerData[T])
+	AddOutputCh(chan *WorkerData[K])
 	InputCh() chan *WorkerData[T]
 	OutputCh() chan *WorkerData[K]
 }
