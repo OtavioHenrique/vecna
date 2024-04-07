@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/otaviohenrique/vecna/pkg/executor"
 	"github.com/otaviohenrique/vecna/pkg/metrics"
 	"github.com/otaviohenrique/vecna/pkg/task/compression"
 	"github.com/otaviohenrique/vecna/pkg/task/s3"
@@ -54,7 +53,7 @@ func main() {
 		500*time.Millisecond,
 	)
 
-	breaker := workers.NewEventBreakerWorker(
+	breaker := workers.NewEventBreakerWorker[[]*sqs.SQSConsumerOutput, *sqs.SQSConsumerOutput](
 		"break sqs messages",
 		1,
 		logger,
@@ -68,11 +67,6 @@ func main() {
 		s3.NewS3Downloader(
 			s3Client,
 			"bucket",
-			func(i interface{}, _ map[string]interface{}) (*string, error) {
-				task, _ := i.(*sqs.SQSConsumerOutput)
-
-				return task.Content, nil
-			},
 			logger,
 		),
 		5,
@@ -84,11 +78,6 @@ func main() {
 		"Decompress Data",
 		compression.NewDecompressor(
 			"gzip",
-			func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				task, _ := i.(*s3.S3DownloaderOutput)
-
-				return task.Data, nil
-			},
 			logger,
 		),
 		5,
@@ -104,16 +93,11 @@ func main() {
 		metric,
 	)
 
-	executor := executor.NewExecutor(
-		[]executor.ExecutorInput{
-			{Worker: sqsConsumer, QueueSize: 10},
-			{Worker: breaker, QueueSize: 10},
-			{Worker: s3Downloader, QueueSize: 10},
-			{Worker: decompressor, QueueSize: 10},
-			{Worker: businessLogic, QueueSize: 10},
-		},
-		logger,
-	)
+	ctx := context.TODO()
 
-	executor.StartWorkers(context.TODO())
+	sqsConsumer.Start(ctx)
+	breaker.Start(ctx)
+	s3Downloader.Start(ctx)
+	decompressor.Start(ctx)
+	businessLogic.Start(ctx)
 }

@@ -23,13 +23,6 @@ type SQSProducerInput struct {
 	MsgAtt map[string]*sqs.MessageAttributeValue
 }
 
-// Function which will receive output from previous worker and metadata, and return the message string to be sent to SQS
-type SqsProducerAdaptFn func(interface{}, map[string]interface{}) (*string, error)
-
-// Optional SqsProducerMsgAttFn will return a map of string (name) and MessageAttributeValues to be used as SQS message attribute if wanted.
-// Ref https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html
-type SqsProducerMsgAttFn func(interface{}, map[string]interface{}) (map[string]*sqs.MessageAttributeValue, error)
-
 // Simple generic task to produce messages to SQS
 type SQSProducer[I SQSProducerInput, O []byte] struct { //TODO nullable type
 	// SQS AWS client to be used
