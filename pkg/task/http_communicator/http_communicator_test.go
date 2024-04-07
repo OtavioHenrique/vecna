@@ -16,14 +16,12 @@ import (
 
 func TestHTTPCommunicator_Run(t *testing.T) {
 	type fields struct {
-		svr     *httptest.Server
-		client  *http.Client
-		adaptFn httpcommunicator.HTTPCommAdaptFn
-		logger  *slog.Logger
+		client *http.Client
+		logger *slog.Logger
 	}
 	type args struct {
 		in0 context.Context
-		i   interface{}
+		i   httpcommunicator.RequestOpts
 		ctx map[string]interface{}
 		in3 string
 	}
@@ -34,31 +32,16 @@ func TestHTTPCommunicator_Run(t *testing.T) {
 		want    httpcommunicator.RequestResponse
 		wantErr bool
 	}{
-		{"It correctly do POST request", func() fields {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == "POST" {
-					w.WriteHeader(http.StatusOK)
-					reqBody, _ := io.ReadAll(r.Body)
-					fmt.Fprintf(w, string(reqBody))
-				}
-			}))
-
-			return fields{
-				svr:    server,
-				logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-				client: http.DefaultClient,
-				adaptFn: func(i interface{}, _ map[string]interface{}) (httpcommunicator.RequestOpts, error) {
-					return httpcommunicator.RequestOpts{
-						Method: "POST",
-						URL:    server.URL,
-						Body:   bytes.NewReader([]byte("OK")),
-					}, nil
-				},
-			}
-		}(),
+		{"It correctly do POST request", fields{
+			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			client: http.DefaultClient,
+		},
 			args{
 				in0: context.TODO(),
-				i:   nil,
+				i: httpcommunicator.RequestOpts{
+					Method: "POST",
+					Body:   bytes.NewReader([]byte("OK")),
+				},
 				ctx: nil,
 				in3: "Test Task Worker",
 			},
@@ -73,18 +56,29 @@ func TestHTTPCommunicator_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == "POST" {
+					w.WriteHeader(http.StatusOK)
+					reqBody, _ := io.ReadAll(r.Body)
+					fmt.Fprint(w, string(reqBody))
+				}
+			}))
+
 			hc := httpcommunicator.NewHTTPCommunicator(
 				tt.fields.client,
-				tt.fields.adaptFn,
 				tt.fields.logger,
 			)
+
+			tt.args.i.URL = server.URL
+
 			got, err := hc.Run(tt.args.in0, tt.args.i, tt.args.ctx, tt.args.in3)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HTTPCommunicator.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr {
-				resp := got.(*httpcommunicator.RequestResponse)
+				resp := got
 
 				if resp.StatusCode != tt.want.StatusCode {
 					t.Errorf("HTTPCommunicator.Run() statusCode = %v, want %v", resp.StatusCode, tt.want.StatusCode)

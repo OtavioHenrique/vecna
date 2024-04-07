@@ -45,15 +45,13 @@ func (s *MockSQSProducer) SendMessage(input *awsSqs.SendMessageInput) (*awsSqs.S
 
 func TestSQSProducer_Run(t *testing.T) {
 	type fields struct {
-		client              sqsiface.SQSAPI
-		sqsProducerAdaptFn  sqs.SqsProducerAdaptFn
-		sqsProducerMsgAttfn sqs.SqsProducerMsgAttFn
-		logger              *slog.Logger
-		opts                *sqs.SQSProducerOpts
+		client sqsiface.SQSAPI
+		logger *slog.Logger
+		opts   *sqs.SQSProducerOpts
 	}
 	type args struct {
 		in0  context.Context
-		i    interface{}
+		i    sqs.SQSProducerInput
 		meta map[string]interface{}
 		name string
 	}
@@ -61,101 +59,56 @@ func TestSQSProducer_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    interface{}
+		want    []byte //TODO nullable type
 		wantErr bool
 	}{
 		{"It correctly sends message", fields{
 			client: &MockSQSProducer{},
-			sqsProducerAdaptFn: func(i interface{}, m map[string]interface{}) (*string, error) {
-				msg, _ := i.(string)
-				return &msg, nil
-			},
-			sqsProducerMsgAttfn: nil,
-			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
+			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
-			in0:  context.TODO(),
-			i:    "test-message",
+			in0: context.TODO(),
+			i: sqs.SQSProducerInput{
+				Body: "test-message",
+			},
 			meta: map[string]interface{}{},
 			name: "test-worker",
 		}, nil, false},
-		{"It correctly returns error when adaptFn returns", fields{
-			client: &MockSQSProducer{},
-			sqsProducerAdaptFn: func(i interface{}, m map[string]interface{}) (*string, error) {
-				return nil, errors.New("adaptFn returned error")
-			},
-			sqsProducerMsgAttfn: nil,
-			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
-		}, args{
-			in0:  context.TODO(),
-			i:    "test-message",
-			meta: map[string]interface{}{},
-			name: "test-worker",
-		}, nil, true},
 		{"It correctly returns error SQS client returns while sending message", fields{
 			client: &MockSQSProducer{WantErr: true},
-			sqsProducerAdaptFn: func(i interface{}, m map[string]interface{}) (*string, error) {
-				msg, _ := i.(string)
-				return &msg, nil
-			},
-			sqsProducerMsgAttfn: nil,
-			logger:              slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:                &sqs.SQSProducerOpts{QueueName: "queue-name"},
+			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
 		}, args{
-			in0:  context.TODO(),
-			i:    "test-message",
+			in0: context.TODO(),
+			i: sqs.SQSProducerInput{
+				Body: "test-message",
+			},
 			meta: map[string]interface{}{},
 			name: "test-worker",
 		}, nil, true},
 		{"It correctly sends metadata when metadata fn is  given", fields{
 			client: &MockSQSProducer{},
-			sqsProducerAdaptFn: func(i interface{}, m map[string]interface{}) (*string, error) {
-				msg, _ := i.(string)
-				return &msg, nil
-			},
-			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*awsSqs.MessageAttributeValue, error) {
-				messageAttributes := map[string]*awsSqs.MessageAttributeValue{
+			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
+		}, args{
+			in0: context.TODO(),
+			i: sqs.SQSProducerInput{
+				Body: "test-message",
+				MsgAtt: map[string]*awsSqs.MessageAttributeValue{
 					"Meaning": {
 						DataType:    aws.String("String"),
 						StringValue: aws.String("42"),
 					},
-				}
-
-				return messageAttributes, nil
+				},
 			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
-		}, args{
-			in0:  context.TODO(),
-			i:    "test-message",
 			meta: map[string]interface{}{},
 			name: "test-worker",
 		}, nil, false},
-		{"It correctly returns error when sqsProducerMsgAttfn returns error", fields{
-			client: &MockSQSProducer{},
-			sqsProducerAdaptFn: func(i interface{}, m map[string]interface{}) (*string, error) {
-				msg, _ := i.(string)
-				return &msg, nil
-			},
-			sqsProducerMsgAttfn: func(i interface{}, m map[string]interface{}) (map[string]*awsSqs.MessageAttributeValue, error) {
-				return nil, errors.New("test-error-sqs-producer-msg-att-fn")
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-			opts:   &sqs.SQSProducerOpts{QueueName: "queue-name"},
-		}, args{
-			in0:  context.TODO(),
-			i:    "test-message",
-			meta: map[string]interface{}{},
-			name: "test-worker",
-		}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := sqs.NewSQSProducer(
 				tt.fields.client,
-				tt.fields.sqsProducerAdaptFn,
-				tt.fields.sqsProducerMsgAttfn,
 				tt.fields.logger,
 				tt.fields.opts,
 			)
@@ -166,16 +119,15 @@ func TestSQSProducer_Run(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(*tt.fields.client.(*MockSQSProducer).CalledWith[0].MessageBody, tt.args.i) {
-				t.Errorf("Wrong message produced = %v, want %v", *tt.fields.client.(*MockSQSProducer).CalledWith[0].MessageBody, tt.args.i)
+			if !tt.wantErr && !reflect.DeepEqual(*tt.fields.client.(*MockSQSProducer).CalledWith[0].MessageBody, tt.args.i.Body) {
+				t.Errorf("Wrong message produced = %v, want %v", *tt.fields.client.(*MockSQSProducer).CalledWith[0].MessageBody, tt.args.i.Body)
 			}
 
-			if !tt.wantErr && tt.fields.sqsProducerMsgAttfn != nil {
-				att, _ := tt.fields.sqsProducerMsgAttfn(tt.args.i, tt.args.meta)
+			if !tt.wantErr && tt.args.i.MsgAtt != nil {
 				producedMeta := tt.fields.client.(*MockSQSProducer).CalledWith[0].MessageAttributes
 
-				if !reflect.DeepEqual(producedMeta, att) {
-					t.Errorf("Wrong metadata field produced on message = %v, want %v", producedMeta, att)
+				if !reflect.DeepEqual(producedMeta, tt.args.i.MsgAtt) {
+					t.Errorf("Wrong metadata field produced on message = %v, want %v", producedMeta, tt.args.i.MsgAtt)
 				}
 			}
 		})
