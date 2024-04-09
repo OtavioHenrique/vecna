@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -17,6 +18,25 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
+
+type MockSQSMessage struct {
+	Path string `json:"path"`
+}
+
+type PathExtractor[T *sqs.SQSConsumerOutput, K string] struct{}
+
+func (p *PathExtractor[T, K]) Run(_ context.Context, in T, meta map[string]interface{}, name string) (K, error) {
+	input := sqs.SQSConsumerOutput(*in)
+
+	var msg MockSQSMessage
+	err := json.Unmarshal([]byte(*input.Content), &msg)
+
+	if err != nil {
+		return "", err
+	}
+
+	return K(msg.Path), nil
+}
 
 type Printer struct{}
 
@@ -60,6 +80,14 @@ func main() {
 		metric,
 	)
 
+	pathExtractor := workers.NewBiDirectionalWorker[*sqs.SQSConsumerOutput, string](
+		"Path Extractor",
+		&PathExtractor[*sqs.SQSConsumerOutput, string]{},
+		1,
+		logger,
+		metric,
+	)
+
 	s3Client := awsS3.New(sess)
 
 	s3Downloader := workers.NewBiDirectionalWorker(
@@ -97,6 +125,7 @@ func main() {
 
 	sqsConsumer.Start(ctx)
 	breaker.Start(ctx)
+	pathExtractor.Start(ctx)
 	s3Downloader.Start(ctx)
 	decompressor.Start(ctx)
 	businessLogic.Start(ctx)
