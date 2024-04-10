@@ -41,7 +41,7 @@ func TestEventBreakerWorker_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := workers.NewEventBreakerWorker[string, string](
+			w := workers.NewEventBreakerWorker[[]string, string](
 				tt.fields.name,
 				tt.fields.numWorker,
 				tt.fields.logger,

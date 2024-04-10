@@ -11,13 +11,13 @@ import (
 // Example:
 // Previous worker output: []string{"a", "b", "c"}
 // Output to next worker (After pass throught EventBreakerWorker): "a", "b", "c" (multiple messages)
-type EventBreakerWorker[T any, K any] struct {
+type EventBreakerWorker[T []K, K any] struct {
 	// Event Name
 	name string
 	// Input chan
-	Input chan *WorkerData[[]T]
+	Input chan *WorkerData[T]
 	// Output Chan
-	Output chan *WorkerData[T]
+	Output chan *WorkerData[K]
 	// Number of goroutines executing this task
 	numWorker int
 	logger    *slog.Logger
@@ -27,7 +27,7 @@ type EventBreakerWorker[T any, K any] struct {
 }
 
 // NewEventBreakerWorker created this worker. Receives: Worker Name, Number of goroutines to execute, logger and metrics
-func NewEventBreakerWorker[T any, K any](name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker[T, K] {
+func NewEventBreakerWorker[T []K, K any](name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker[T, K] {
 	w := new(EventBreakerWorker[T, K])
 
 	w.name = name
@@ -47,19 +47,19 @@ func (w *EventBreakerWorker[T, K]) Started() bool {
 	return w.started
 }
 
-func (w *EventBreakerWorker[T, K]) InputCh() chan *WorkerData[[]T] {
+func (w *EventBreakerWorker[T, K]) InputCh() chan *WorkerData[T] {
 	return w.Input
 }
 
-func (w *EventBreakerWorker[T, K]) OutputCh() chan *WorkerData[T] {
+func (w *EventBreakerWorker[T, K]) OutputCh() chan *WorkerData[K] {
 	return w.Output
 }
 
-func (w *EventBreakerWorker[T, K]) AddOutputCh(o chan *WorkerData[T]) {
+func (w *EventBreakerWorker[T, K]) AddOutputCh(o chan *WorkerData[K]) {
 	w.Output = o
 }
 
-func (w *EventBreakerWorker[T, K]) AddInputCh(i chan *WorkerData[[]T]) {
+func (w *EventBreakerWorker[T, K]) AddInputCh(i chan *WorkerData[T]) {
 	w.Input = i
 }
 
@@ -79,7 +79,7 @@ func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
 					for _, v := range msgIn.Data {
 						go w.metric.ProducedMessage(w.name)
 
-						w.Output <- &WorkerData[T]{Data: v, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData[K]{Data: v, Metadata: msgIn.Metadata}
 					}
 				case <-w.closeCh:
 					return
