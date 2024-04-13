@@ -12,28 +12,28 @@ import (
 	"github.com/otaviohenrique/vecna/pkg/workers"
 )
 
-type MockTaskConsumer struct {
-	calledWith []string
+type MockTaskConsumer[T string, K string] struct {
+	calledWith []T
 	mu         sync.Mutex
 }
 
-func (t *MockTaskConsumer) CalledWith() []string {
+func (t *MockTaskConsumer[T, K]) CalledWith() []T {
 	return t.calledWith
 }
 
-func (t *MockTaskConsumer) Run(_ context.Context, input interface{}, meta map[string]interface{}, _ string) (interface{}, error) {
+func (t *MockTaskConsumer[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
 	t.mu.Lock()
-	t.calledWith = append(t.calledWith, string(input.([]byte)))
+	t.calledWith = append(t.calledWith, input)
 	t.mu.Unlock()
 
-	return []byte(""), nil
+	return "", nil
 }
 
 func TestConsumerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Input     chan *workers.WorkerData
-		Task      *MockTaskConsumer
+		Input     chan *workers.WorkerData[string]
+		Task      *MockTaskConsumer[string, string]
 		numWorker int
 		logger    *slog.Logger
 		Metrics   metrics.Metric
@@ -45,8 +45,8 @@ func TestConsumerWorker_Start(t *testing.T) {
 	}{
 		{"Consuming message and running task with it", fields{
 			name:      "Test Consumer Worker",
-			Input:     make(chan *workers.WorkerData),
-			Task:      &MockTaskConsumer{},
+			Input:     make(chan *workers.WorkerData[string]),
+			Task:      &MockTaskConsumer[string, string]{},
 			numWorker: 3,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			Metrics:   metrics.NewMockMetrics(),
@@ -54,7 +54,7 @@ func TestConsumerWorker_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := workers.NewConsumerWorker(
+			w := workers.NewConsumerWorker[string, string](
 				tt.fields.name,
 				tt.fields.Task,
 				tt.fields.numWorker,
@@ -64,18 +64,10 @@ func TestConsumerWorker_Start(t *testing.T) {
 			w.Input = tt.fields.Input
 			w.Start(context.TODO())
 
-			doneCh := make(chan struct{})
-
-			go func() {
-				for i := 0; i < len(tt.inputMsgs); i++ {
-					tt.fields.Input <- &workers.WorkerData{Data: []byte(tt.inputMsgs[i])}
-					time.Sleep(1 * time.Millisecond)
-				}
-
-				doneCh <- struct{}{}
-			}()
-
-			<-doneCh
+			for i := 0; i < len(tt.inputMsgs); i++ {
+				tt.fields.Input <- &workers.WorkerData[string]{Data: tt.inputMsgs[i]}
+				time.Sleep(1 * time.Millisecond)
+			}
 
 			if consumed, expected := len(tt.fields.Task.CalledWith()), len(tt.inputMsgs); consumed != expected {
 				t.Errorf("Consumer should have consumed all input messages. Expected msg count: %d, Result: %d", expected, consumed)

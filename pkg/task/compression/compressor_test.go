@@ -33,12 +33,11 @@ func CompressZstd2(s string) []byte {
 func TestCompressor_Run(t *testing.T) {
 	type fields struct {
 		compressionType string
-		adaptFn         compression.CompressAdaptFn
 		logger          *slog.Logger
 	}
 	type args struct {
 		in0   context.Context
-		input interface{}
+		input []byte
 		meta  map[string]interface{}
 		in3   string
 	}
@@ -46,15 +45,12 @@ func TestCompressor_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    interface{}
+		want    []byte
 		wantErr bool
 	}{
 		{"It correct compress gzip", fields{
 			compressionType: "gzip",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return i.([]byte), nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: []byte("hello-world"),
@@ -63,10 +59,7 @@ func TestCompressor_Run(t *testing.T) {
 		}, CompressGzip2("hello-world"), false},
 		{"It correct compress zstd", fields{
 			compressionType: "zstd",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return i.([]byte), nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: []byte("hello-world"),
@@ -78,7 +71,6 @@ func TestCompressor_Run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := compression.NewCompressor(
 				tt.fields.compressionType,
-				tt.fields.adaptFn,
 				tt.fields.logger,
 			)
 			got, err := d.Run(tt.args.in0, tt.args.input, tt.args.meta, tt.args.in3)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -34,12 +33,11 @@ func CompressZstd(s string) []byte {
 func TestDecompressor_Run(t *testing.T) {
 	type fields struct {
 		compressionType string
-		adaptFn         compression.DecompressAdaptFn
 		logger          *slog.Logger
 	}
 	type args struct {
 		in0   context.Context
-		input interface{}
+		input []byte
 		meta  map[string]interface{}
 		in3   string
 	}
@@ -47,41 +45,32 @@ func TestDecompressor_Run(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    interface{}
+		want    []byte
 		wantErr bool
 	}{
 		{"It decompress Gzip correctly", fields{
 			compressionType: "gzip",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return i.([]byte), nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: CompressGzip("test-decompression-gzip"),
 			meta:  map[string]interface{}{},
 			in3:   "test"},
-			"test-decompression-gzip", false,
+			[]byte("test-decompression-gzip"), false,
 		},
 		{"It decompress zstd correctly", fields{
 			compressionType: "zstd",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return i.([]byte), nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: CompressZstd("test-decompression-zstd"),
 			meta:  map[string]interface{}{},
 			in3:   "test"},
-			"test-decompression-zstd", false,
+			[]byte("test-decompression-zstd"), false,
 		},
 		{"It returns adaptFN error correctly", fields{
 			compressionType: "gzip",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return nil, errors.New("test-error")
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: nil,
@@ -91,10 +80,7 @@ func TestDecompressor_Run(t *testing.T) {
 		},
 		{"It returns error when compression type is unknown", fields{
 			compressionType: "unknown compression type",
-			adaptFn: func(i interface{}, _ map[string]interface{}) ([]byte, error) {
-				return i.([]byte), nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
 			input: CompressGzip("test-decompression-gzip"),
@@ -107,7 +93,6 @@ func TestDecompressor_Run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := compression.NewDecompressor(
 				tt.fields.compressionType,
-				tt.fields.adaptFn,
 				tt.fields.logger,
 			)
 			got, err := d.Run(tt.args.in0, tt.args.input, tt.args.meta, tt.args.in3)
@@ -115,8 +100,8 @@ func TestDecompressor_Run(t *testing.T) {
 				t.Errorf("Decompressor.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && !reflect.DeepEqual(string(got.([]byte)), tt.want) {
-				t.Errorf("Decompressor.Run() = %v, want %v", string(got.([]byte)), tt.want)
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Decompressor.Run() = %v, want %v", string(got), tt.want)
 			}
 		})
 	}

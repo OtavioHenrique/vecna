@@ -51,12 +51,11 @@ func TestS3Uploader_Run(t *testing.T) {
 	type fields struct {
 		client     s3iface.S3API
 		bucketName string
-		adaptFn    func(interface{}, map[string]interface{}) (*s3.S3UploaderInput, error)
 		logger     *slog.Logger
 	}
 	type args struct {
 		in0   context.Context
-		input interface{}
+		input s3.S3UploaderInput
 		meta  map[string]interface{}
 	}
 	tests := []struct {
@@ -69,41 +68,19 @@ func TestS3Uploader_Run(t *testing.T) {
 		{"it correct upload the file based on given input", fields{
 			client:     &S3UploaderMock{WantErr: false},
 			bucketName: "any-bucket",
-			adaptFn: func(i interface{}, m map[string]interface{}) (*s3.S3UploaderInput, error) {
-				data, _ := i.([]string)
-
-				return &s3.S3UploaderInput{Path: &data[0], Content: []byte(data[1])}, nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
-			input: []string{"path/to/obj", "any-data-to-upload"},
+			input: s3.S3UploaderInput{Path: "path/to/obj", Content: []byte("any-data-to-upload")},
 			meta:  map[string]interface{}{},
 		}, nil, false},
 		{"it correct return error when aws call returns error", fields{
 			client:     &S3UploaderMock{WantErr: true},
 			bucketName: "any-bucket",
-			adaptFn: func(i interface{}, m map[string]interface{}) (*s3.S3UploaderInput, error) {
-				data, _ := i.([]string)
-
-				return &s3.S3UploaderInput{Path: &data[0], Content: []byte(data[1])}, nil
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			logger:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		}, args{
 			in0:   context.TODO(),
-			input: []string{"path/to/obj", "any-data-to-upload"},
-			meta:  map[string]interface{}{},
-		}, nil, true},
-		{"it correct return error when adaptFn returns error", fields{
-			client:     &S3UploaderMock{WantErr: false},
-			bucketName: "any-bucket",
-			adaptFn: func(_ interface{}, _ map[string]interface{}) (*s3.S3UploaderInput, error) {
-				return nil, errors.New("error-adapt-fn")
-			},
-			logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-		}, args{
-			in0:   context.TODO(),
-			input: []string{"path/to/obj", "any-data-to-upload"},
+			input: s3.S3UploaderInput{Path: "path/to/obj", Content: []byte("any-data-to-upload")},
 			meta:  map[string]interface{}{},
 		}, nil, true},
 	}
@@ -112,10 +89,11 @@ func TestS3Uploader_Run(t *testing.T) {
 			s := s3.NewS3Uploader(
 				tt.fields.client,
 				tt.fields.bucketName,
-				tt.fields.adaptFn,
 				tt.fields.logger,
 			)
-			_, err := s.Run(tt.args.in0, tt.args.input, tt.args.meta, tt.name)
+
+			_, err := s.Run(tt.args.in0, &tt.args.input, tt.args.meta, tt.name)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("S3Uploader.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -123,14 +101,14 @@ func TestS3Uploader_Run(t *testing.T) {
 
 			if !tt.wantErr {
 				mck := tt.fields.client.(*S3UploaderMock)
-				input := tt.args.input.([]string)
+				input := tt.args.input
 
-				if *mck.CalledWith[0].Key != input[0] {
-					t.Errorf("S3Uploader.Run() want to call upload with right key, got := %s want = %s", *mck.CalledWith[0].Key, input[1])
+				if *mck.CalledWith[0].Key != input.Path {
+					t.Errorf("S3Uploader.Run() want to call upload with right key, got := %s want = %s", *mck.CalledWith[0].Key, input.Path)
 				}
 
-				if str, _ := readToString(mck.CalledWith[0].Body); str != input[1] {
-					t.Errorf("S3Uploader.Run() want to call upload with right content, got := %s want = %s", str, input[0])
+				if str, _ := readToString(mck.CalledWith[0].Body); str != string(input.Content) {
+					t.Errorf("S3Uploader.Run() want to call upload with right content, got := %s want = %s", str, string(input.Content))
 				}
 			}
 		})

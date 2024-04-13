@@ -18,38 +18,32 @@ type SQSProducerOpts struct {
 	QueueName string
 }
 
-// Function which will receive output from previous worker and metadata, and return the message string to be sent to SQS
-type SqsProducerAdaptFn func(interface{}, map[string]interface{}) (*string, error)
-
-// Optional SqsProducerMsgAttFn will return a map of string (name) and MessageAttributeValues to be used as SQS message attribute if wanted.
-// Ref https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html
-type SqsProducerMsgAttFn func(interface{}, map[string]interface{}) (map[string]*sqs.MessageAttributeValue, error)
-
-// Simple generic task to produce messages to SQS
-type SQSProducer struct {
-	// SQS AWS client to be used
-	client              sqsiface.SQSAPI
-	sqsProducerAdaptFn  SqsProducerAdaptFn
-	sqsProducerMsgAttfn SqsProducerMsgAttFn
-	logger              *slog.Logger
-	opts                *SQSProducerOpts
-	queueURL            *string
+type SQSProducerInput struct {
+	Body   string
+	MsgAtt map[string]*sqs.MessageAttributeValue
 }
 
-func NewSQSProducer(client sqsiface.SQSAPI, adaptFn SqsProducerAdaptFn, msgAttFn SqsProducerMsgAttFn, logger *slog.Logger, opts *SQSProducerOpts) *SQSProducer {
-	p := new(SQSProducer)
+// Simple generic task to produce messages to SQS
+type SQSProducer[I SQSProducerInput, O []byte] struct { //TODO nullable type
+	// SQS AWS client to be used
+	client   sqsiface.SQSAPI
+	logger   *slog.Logger
+	opts     *SQSProducerOpts
+	queueURL *string
+}
+
+func NewSQSProducer[I SQSProducerInput, O []byte](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSProducerOpts) *SQSProducer[I, O] {
+	p := new(SQSProducer[I, O])
 
 	p.client = client
-	p.sqsProducerAdaptFn = adaptFn
-	p.sqsProducerMsgAttfn = msgAttFn
-	p.logger = p.logger
+	p.logger = logger
 	p.opts = opts
 	p.queueURL = p.GetQueueURL()
 
 	return p
 }
 
-func (p *SQSProducer) GetQueueURL() *string {
+func (p *SQSProducer[I, O]) GetQueueURL() *string {
 	urlResult, err := p.client.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: aws.String(p.opts.QueueName),
 	})
@@ -64,31 +58,13 @@ func (p *SQSProducer) GetQueueURL() *string {
 }
 
 // Run will produce message returned by sqsProducerAdaptFn to the targete SQS queue. It always returns nil, being capable of only return error if any happen
-func (c *SQSProducer) Run(_ context.Context, i interface{}, meta map[string]interface{}, name string) (interface{}, error) {
-	msg, err := c.sqsProducerAdaptFn(i, meta)
+func (c *SQSProducer[I, O]) Run(_ context.Context, i I, meta map[string]interface{}, name string) (O, error) {
+	input := SQSProducerInput(i)
 
-	if err != nil {
-		return nil, err
-	}
-
-	var msgAttributes map[string]*sqs.MessageAttributeValue
-
-	if c.sqsProducerMsgAttfn != nil {
-		resp, err := c.sqsProducerMsgAttfn(i, meta)
-
-		if err != nil {
-			return nil, err
-		}
-
-		msgAttributes = resp
-	} else {
-		msgAttributes = nil
-	}
-
-	_, err = c.client.SendMessage(&sqs.SendMessageInput{
+	_, err := c.client.SendMessage(&sqs.SendMessageInput{
 		DelaySeconds:      c.opts.DelaySeconds,
-		MessageAttributes: msgAttributes,
-		MessageBody:       msg,
+		MessageAttributes: input.MsgAtt,
+		MessageBody:       &input.Body,
 		QueueUrl:          c.queueURL,
 	})
 

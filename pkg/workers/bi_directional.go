@@ -9,15 +9,15 @@ import (
 )
 
 // BiDirectionalWorker is a worker that receives input from a channel and put outputs on a channel
-type BiDirectionalWorker struct {
+type BiDirectionalWorker[I any, O any] struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	Input chan *WorkerData
+	Input chan *WorkerData[I]
 	// output is the channel which the worker will put output
-	Output chan *WorkerData
+	Output chan *WorkerData[O]
 	// task to be executed by the worker
-	task task.Task
+	task task.Task[I, O]
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
 	numWorker int
 	logger    *slog.Logger
@@ -26,8 +26,8 @@ type BiDirectionalWorker struct {
 	started   bool
 }
 
-func NewBiDirectionalWorker(name string, task task.Task, numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker {
-	w := new(BiDirectionalWorker)
+func NewBiDirectionalWorker[I any, O any](name string, task task.Task[I, O], numWorker int, logger *slog.Logger, metric metrics.Metric) *BiDirectionalWorker[I, O] {
+	w := new(BiDirectionalWorker[I, O])
 
 	w.name = name
 	w.task = task
@@ -39,23 +39,31 @@ func NewBiDirectionalWorker(name string, task task.Task, numWorker int, logger *
 	return w
 }
 
-func (w *BiDirectionalWorker) Name() string {
+func (w *BiDirectionalWorker[I, O]) Name() string {
 	return w.name
 }
 
-func (w *BiDirectionalWorker) Started() bool {
+func (w *BiDirectionalWorker[I, O]) Started() bool {
 	return w.started
 }
 
-func (w *BiDirectionalWorker) InputCh() chan *WorkerData {
+func (w *BiDirectionalWorker[I, O]) InputCh() chan *WorkerData[I] {
 	return w.Input
 }
 
-func (w *BiDirectionalWorker) OutputCh() chan *WorkerData {
+func (w *BiDirectionalWorker[I, O]) OutputCh() chan *WorkerData[O] {
 	return w.Output
 }
 
-func (w *BiDirectionalWorker) Start(ctx context.Context) {
+func (w *BiDirectionalWorker[I, O]) AddOutputCh(o chan *WorkerData[O]) {
+	w.Output = o
+}
+
+func (w *BiDirectionalWorker[I, O]) AddInputCh(i chan *WorkerData[I]) {
+	w.Input = i
+}
+
+func (w *BiDirectionalWorker[I, O]) Start(ctx context.Context) {
 	w.logger.Info("starting bidirectional worker", "worker_name", w.name)
 
 	for i := 0; i < w.numWorker; i++ {
@@ -75,7 +83,7 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 						w.logger.Error("task error", "worker", w.name, "error", err)
 						go w.metric.TaskError(w.name)
 					} else {
-						w.Output <- &WorkerData{Data: resp, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData[O]{Data: resp, Metadata: msgIn.Metadata}
 						go func() {
 							w.metric.TaskSuccess(w.name)
 							w.metric.ProducedMessage(w.name)
@@ -91,7 +99,7 @@ func (w *BiDirectionalWorker) Start(ctx context.Context) {
 	w.started = true
 }
 
-func (w *BiDirectionalWorker) Stop(ctx context.Context) {
+func (w *BiDirectionalWorker[I, O]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Worker", "worker_name", w.name)
 
 	close(w.closeCh)

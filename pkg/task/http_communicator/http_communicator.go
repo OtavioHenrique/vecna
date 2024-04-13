@@ -9,9 +9,6 @@ import (
 	"net/url"
 )
 
-// HTTPCommAdaptFn will receive input and context and should return RequestOpts containing all information about the request wanted
-type HTTPCommAdaptFn func(interface{}, map[string]interface{}) (RequestOpts, error)
-
 // RequestOpts contains all information needed to make the request
 type RequestOpts struct {
 	// Only accept POST, GET, HEAD, POSTFORM
@@ -32,31 +29,26 @@ type RequestResponse struct {
 }
 
 // HTTPCommunicator client performs HTTP requests based on RequestOpts returned by adaptFn
-type HTTPCommunicator struct {
+type HTTPCommunicator[I RequestOpts, O *RequestResponse] struct {
 	// HTTP client to be used to perform requests
-	client  *http.Client
-	adaptFn HTTPCommAdaptFn
-	logger  *slog.Logger
+	client *http.Client
+	logger *slog.Logger
 }
 
-func NewHTTPCommunicator(client *http.Client, adaptFn HTTPCommAdaptFn, logger *slog.Logger) *HTTPCommunicator {
-	hc := new(HTTPCommunicator)
+func NewHTTPCommunicator[I RequestOpts, O *RequestResponse](client *http.Client, logger *slog.Logger) *HTTPCommunicator[I, O] {
+	hc := new(HTTPCommunicator[I, O])
 
 	hc.client = client
-	hc.adaptFn = adaptFn
 	hc.logger = logger
 
 	return hc
 }
 
-func (hc *HTTPCommunicator) Run(_ context.Context, i interface{}, ctx map[string]interface{}, _ string) (interface{}, error) {
-	req, err := hc.adaptFn(i, ctx)
-
-	if err != nil {
-		return nil, err
-	}
+func (hc *HTTPCommunicator[I, O]) Run(_ context.Context, i I, ctx map[string]interface{}, _ string) (O, error) {
+	req := RequestOpts(i)
 
 	var resp *http.Response
+	var err error
 
 	switch req.Method {
 	case "POST":

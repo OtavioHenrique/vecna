@@ -14,8 +14,8 @@ import (
 func TestEventBreakerWorker_Start(t *testing.T) {
 	type fields struct {
 		name      string
-		Input     chan *workers.WorkerData
-		Output    chan *workers.WorkerData
+		Input     chan *workers.WorkerData[[]string]
+		Output    chan *workers.WorkerData[string]
 		numWorker int
 		logger    *slog.Logger
 		metric    metrics.Metric
@@ -32,8 +32,8 @@ func TestEventBreakerWorker_Start(t *testing.T) {
 	}{
 		{"It correct breaks events based on breakFn", fields{
 			name:      "test-worker",
-			Input:     make(chan *workers.WorkerData, 10),
-			Output:    make(chan *workers.WorkerData, 20),
+			Input:     make(chan *workers.WorkerData[[]string], 10),
+			Output:    make(chan *workers.WorkerData[string], 20),
 			numWorker: 1,
 			logger:    slog.New(slog.NewTextHandler(os.Stdout, nil)),
 			metric:    metrics.NewMockMetrics(),
@@ -41,23 +41,25 @@ func TestEventBreakerWorker_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := workers.NewEventBreakerWorker(
+			w := workers.NewEventBreakerWorker[[]string, string](
 				tt.fields.name,
 				tt.fields.numWorker,
 				tt.fields.logger,
 				tt.fields.metric,
 			)
+
 			w.Input = tt.fields.Input
 			w.Output = tt.fields.Output
+
 			w.Start(tt.args.ctx)
 
-			tt.fields.Input <- &workers.WorkerData{Data: tt.input, Metadata: nil}
+			tt.fields.Input <- &workers.WorkerData[[]string]{Data: tt.input, Metadata: nil}
 
 			var result []string
 			for i := 0; i < len(tt.input); i++ {
 				value := <-tt.fields.Output
 
-				result = append(result, value.Data.(string))
+				result = append(result, value.Data)
 			}
 
 			if reflect.DeepEqual(result, tt.input) != true {

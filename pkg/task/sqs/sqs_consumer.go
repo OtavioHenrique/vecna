@@ -29,7 +29,7 @@ type SQSConsumerOpts struct {
 // SQS Consumer is a Task that when called, get messages from a SQS queue and return them.
 // It return an array of SQSConsumerOutput and append messages receipt handlers on metadata
 // Exclude messages based on receipt handler is user responsability
-type SQSConsumer struct {
+type SQSConsumer[I []byte, O []*SQSConsumerOutput] struct {
 	// SQS AWS client to be used
 	client   sqsiface.SQSAPI
 	logger   *slog.Logger
@@ -37,8 +37,8 @@ type SQSConsumer struct {
 	queueURL *string
 }
 
-func NewSQSConsumer(client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSConsumerOpts) *SQSConsumer {
-	c := new(SQSConsumer)
+func NewSQSConsumer[I []byte, O []*SQSConsumerOutput](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSConsumerOpts) *SQSConsumer[I, O] {
+	c := new(SQSConsumer[I, O])
 
 	c.client = client
 	c.logger = logger
@@ -48,7 +48,7 @@ func NewSQSConsumer(client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSConsum
 	return c
 }
 
-func (c *SQSConsumer) GetQueueURL() *string {
+func (c *SQSConsumer[I, O]) GetQueueURL() *string {
 	urlResult, err := c.client.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: aws.String(c.opts.QueueName),
 	})
@@ -62,17 +62,17 @@ func (c *SQSConsumer) GetQueueURL() *string {
 	return urlResult.QueueUrl
 }
 
-func (c *SQSConsumer) maxNumberOfMessages() int64 {
+func (c *SQSConsumer[I, O]) maxNumberOfMessages() int64 {
 	return c.opts.MaxNumberOfMessages
 }
 
-func (c *SQSConsumer) visibilityTimeout() int64 {
+func (c *SQSConsumer[I, O]) visibilityTimeout() int64 {
 	return c.opts.VisibilityTimeout
 }
 
 // Run when called consume messages from SQS and return TaskData with Data containing an array of *SQSConsumerOutput
 // It appends receipt handlers to metadata to be excluded later by user
-func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) (interface{}, error) {
+func (c *SQSConsumer[I, O]) Run(_ context.Context, _ interface{}, meta map[string]interface{}, name string) (O, error) {
 	msgs, err := c.receiveMessages(c.queueURL)
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (c *SQSConsumer) Run(_ context.Context, _ interface{}, meta map[string]inte
 	return messagesOutput, nil
 }
 
-func (c *SQSConsumer) receiveMessages(queueUrl *string) ([]*sqs.Message, error) {
+func (c *SQSConsumer[I, O]) receiveMessages(queueUrl *string) ([]*sqs.Message, error) {
 	msgResult, err := c.client.ReceiveMessage(&sqs.ReceiveMessageInput{
 		AttributeNames: []*string{
 			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
