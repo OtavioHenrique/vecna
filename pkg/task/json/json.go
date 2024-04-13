@@ -7,25 +7,25 @@ import (
 )
 
 // JsonUnmarshaller is a generic task to unmarshall JSONs.
-type JsonUnmarshaller[T []byte, K any] struct {
+type JsonUnmarshaller[I []byte, O any] struct {
 	logger *slog.Logger
 }
 
-func NewJsonUnmarshaller[T []byte, K any](logger *slog.Logger) *JsonUnmarshaller[T, K] {
-	u := new(JsonUnmarshaller[T, K])
+func NewJsonUnmarshaller[I []byte, O any](logger *slog.Logger) *JsonUnmarshaller[I, O] {
+	u := new(JsonUnmarshaller[I, O])
 
 	u.logger = logger
 
 	return u
 }
 
-func (u *JsonUnmarshaller[T, K]) Run(_ context.Context, input []byte, meta map[string]interface{}, _ string) (K, error) {
-	var target K
+func (u *JsonUnmarshaller[I, O]) Run(_ context.Context, input []byte, meta map[string]interface{}, _ string) (O, error) {
+	var target O
 
 	err := json.Unmarshal(input, &target)
 
 	if err != nil {
-		var nullTarget K
+		var nullTarget O
 
 		return nullTarget, err
 	}
@@ -34,19 +34,19 @@ func (u *JsonUnmarshaller[T, K]) Run(_ context.Context, input []byte, meta map[s
 }
 
 // JsonMarshaller is a generic task which marshal any given struct into JSON.
-type JsonMarshaller[T any, K []byte] struct {
+type JsonMarshaller[I any, O []byte] struct {
 	logger *slog.Logger
 }
 
-func NewJsonMarshaller[T any, K []byte](logger *slog.Logger) *JsonMarshaller[T, K] {
-	u := new(JsonMarshaller[T, K])
+func NewJsonMarshaller[I any, O []byte](logger *slog.Logger) *JsonMarshaller[I, O] {
+	u := new(JsonMarshaller[I, O])
 
 	u.logger = logger
 
 	return u
 }
 
-func (u *JsonMarshaller[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+func (u *JsonMarshaller[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	bytes, err := json.Marshal(input)
 
 	if err != nil {

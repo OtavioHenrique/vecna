@@ -16,7 +16,7 @@ type SQSDeleterOpts struct {
 }
 
 // SQSDeleter will delete a message on SQS based on a given receiptHandle
-type SQSDeleter[T string, K []byte] struct {
+type SQSDeleter[I string, O []byte] struct {
 	// SQS AWS Client to be used
 	client   sqsiface.SQSAPI
 	logger   *slog.Logger
@@ -24,8 +24,8 @@ type SQSDeleter[T string, K []byte] struct {
 	queueURL *string
 }
 
-func NewSQSDeleter[T string, K []byte](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSDeleterOpts) *SQSDeleter[T, K] {
-	c := new(SQSDeleter[T, K])
+func NewSQSDeleter[I string, O []byte](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSDeleterOpts) *SQSDeleter[I, O] {
+	c := new(SQSDeleter[I, O])
 
 	c.client = client
 	c.logger = logger
@@ -35,7 +35,7 @@ func NewSQSDeleter[T string, K []byte](client sqsiface.SQSAPI, logger *slog.Logg
 	return c
 }
 
-func (s *SQSDeleter[T, K]) GetQueueURL() *string {
+func (s *SQSDeleter[I, O]) GetQueueURL() *string {
 	urlResult, err := s.client.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: aws.String(s.opts.QueueName),
 	})
@@ -50,7 +50,7 @@ func (s *SQSDeleter[T, K]) GetQueueURL() *string {
 }
 
 // Run() delete a message on SQS based on the return of adaptFn. It only returns errors
-func (s *SQSDeleter[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+func (s *SQSDeleter[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	_, err := s.deleteMessage(string(input))
 
 	if err != nil {
@@ -62,7 +62,7 @@ func (s *SQSDeleter[T, K]) Run(_ context.Context, input T, meta map[string]inter
 	return nil, nil
 }
 
-func (s *SQSDeleter[T, K]) deleteMessage(receipt string) (*sqs.DeleteMessageOutput, error) {
+func (s *SQSDeleter[I, O]) deleteMessage(receipt string) (*sqs.DeleteMessageOutput, error) {
 	resp, err := s.client.DeleteMessage(&sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(*s.queueURL),
 		ReceiptHandle: aws.String(receipt),

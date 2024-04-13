@@ -45,8 +45,8 @@ type Decompressor[T, K []byte] struct {
 	logger          *slog.Logger
 }
 
-func NewDecompressor[T, K []byte](compressionType string, logger *slog.Logger) *Decompressor[T, K] {
-	d := new(Decompressor[T, K])
+func NewDecompressor[I, O []byte](compressionType string, logger *slog.Logger) *Decompressor[I, O] {
+	d := new(Decompressor[I, O])
 
 	d.compressionType = compressionType
 	d.logger = logger
@@ -55,7 +55,7 @@ func NewDecompressor[T, K []byte](compressionType string, logger *slog.Logger) *
 }
 
 // The return data from Run will be []byte decompressed
-func (d *Decompressor[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+func (d *Decompressor[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	r := bytes.NewReader(input)
 	reader, err := NewReader(d.compressionType, r)
 

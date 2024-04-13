@@ -11,7 +11,7 @@ import (
 )
 
 // S3Uploader is a task which will upload a given data on the given path (key) of one bucket
-type S3Uploader[T *S3UploaderInput, K []byte] struct {
+type S3Uploader[I *S3UploaderInput, O []byte] struct {
 	// S3 AWS client to be used
 	client s3iface.S3API
 	// Bucket name where all objects will be stored
@@ -28,8 +28,8 @@ type S3UploaderInput struct {
 	Content []byte
 }
 
-func NewS3Uploader[T *S3UploaderInput, K []byte](client s3iface.S3API, bucketName string, logger *slog.Logger) *S3Uploader[T, K] {
-	u := new(S3Uploader[T, K])
+func NewS3Uploader[I *S3UploaderInput, O []byte](client s3iface.S3API, bucketName string, logger *slog.Logger) *S3Uploader[I, O] {
+	u := new(S3Uploader[I, O])
 
 	u.client = client
 	u.bucketName = bucketName
@@ -40,7 +40,7 @@ func NewS3Uploader[T *S3UploaderInput, K []byte](client s3iface.S3API, bucketNam
 
 // Run() will be called by worker and should return a pointer to TaskData.
 // It doesn't merge nothing on metadata given and only return errors if any
-func (s *S3Uploader[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+func (s *S3Uploader[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	err := s.uploadObject(input)
 
 	return nil, err

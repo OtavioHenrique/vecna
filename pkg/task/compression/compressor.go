@@ -18,7 +18,7 @@ var (
 )
 
 // Compressor is a generic task capable of compress a []byte into zstd or gzip.
-type Compressor[T, K []byte] struct {
+type Compressor[I, O []byte] struct {
 	// CompressionType is either "gzip" or "zstd"
 	compressionType string
 	logger          *slog.Logger
@@ -54,7 +54,7 @@ func NewCompressor[T, K []byte](compressionType string, logger *slog.Logger) *Co
 }
 
 // Run receives output from previous worker, calls adaptFn and compress it into selected format.
-func (d *Compressor[T, K]) Run(_ context.Context, input T, meta map[string]interface{}, _ string) (K, error) {
+func (d *Compressor[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	var buf bytes.Buffer
 	zw, err := NewWriter(d.compressionType, &buf)
 	if err != nil {

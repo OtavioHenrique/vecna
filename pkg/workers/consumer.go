@@ -9,13 +9,13 @@ import (
 )
 
 // Consumer worker is a worker than simply consumes from a channel and executes tasks passing the input
-type ConsumerWorker[T any, K any] struct {
+type ConsumerWorker[I any, O any] struct {
 	// worker name to be reported on metrics and logging
 	name string
 	// intput is the channel that input will be given to this pool of workers
-	Input chan *WorkerData[T]
+	Input chan *WorkerData[I]
 	// task to be executed by the worker
-	task task.Task[T, K]
+	task task.Task[I, O]
 	// number of goroutines to compose this worker pool, each one will listen to the channel and execute tasks
 	numWorker int
 	logger    *slog.Logger
@@ -24,8 +24,8 @@ type ConsumerWorker[T any, K any] struct {
 	started   bool
 }
 
-func NewConsumerWorker[T any, K any](name string, task task.Task[T, K], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker[T, K] {
-	w := new(ConsumerWorker[T, K])
+func NewConsumerWorker[I any, O any](name string, task task.Task[I, O], numWorker int, logger *slog.Logger, metric metrics.Metric) *ConsumerWorker[I, O] {
+	w := new(ConsumerWorker[I, O])
 
 	w.name = name
 	w.numWorker = numWorker
@@ -37,31 +37,31 @@ func NewConsumerWorker[T any, K any](name string, task task.Task[T, K], numWorke
 	return w
 }
 
-func (w *ConsumerWorker[T, K]) Name() string {
+func (w *ConsumerWorker[I, O]) Name() string {
 	return w.name
 }
 
-func (w *ConsumerWorker[T, K]) Started() bool {
+func (w *ConsumerWorker[I, O]) Started() bool {
 	return w.started
 }
 
-func (w *ConsumerWorker[T, K]) InputCh() chan *WorkerData[T] {
+func (w *ConsumerWorker[I, O]) InputCh() chan *WorkerData[I] {
 	return w.Input
 }
 
-func (w *ConsumerWorker[T, K]) OutputCh() chan *WorkerData[K] {
+func (w *ConsumerWorker[I, O]) OutputCh() chan *WorkerData[O] {
 	return nil
 }
 
-func (w *ConsumerWorker[T, K]) AddOutputCh(o chan *WorkerData[K]) {
+func (w *ConsumerWorker[I, O]) AddOutputCh(o chan *WorkerData[O]) {
 	w.logger.Error("Consumer worker don't have output channel to add.")
 }
 
-func (w *ConsumerWorker[T, K]) AddInputCh(i chan *WorkerData[T]) {
+func (w *ConsumerWorker[I, O]) AddInputCh(i chan *WorkerData[I]) {
 	w.Input = i
 }
 
-func (w *ConsumerWorker[T, K]) Start(ctx context.Context) {
+func (w *ConsumerWorker[I, O]) Start(ctx context.Context) {
 	w.logger.Info("starting consumer worker", "worker_name", w.name)
 
 	for i := 0; i < w.numWorker; i++ {
@@ -93,7 +93,7 @@ func (w *ConsumerWorker[T, K]) Start(ctx context.Context) {
 	w.started = true
 }
 
-func (w *ConsumerWorker[T, K]) Stop(ctx context.Context) {
+func (w *ConsumerWorker[I, O]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Worker", "worker_name", w.name)
 
 	close(w.closeCh)

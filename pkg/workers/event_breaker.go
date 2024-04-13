@@ -11,13 +11,13 @@ import (
 // Example:
 // Previous worker output: []string{"a", "b", "c"}
 // Output to next worker (After pass throught EventBreakerWorker): "a", "b", "c" (multiple messages)
-type EventBreakerWorker[T []K, K any] struct {
+type EventBreakerWorker[I []O, O any] struct {
 	// Event Name
 	name string
 	// Input chan
-	Input chan *WorkerData[T]
+	Input chan *WorkerData[I]
 	// Output Chan
-	Output chan *WorkerData[K]
+	Output chan *WorkerData[O]
 	// Number of goroutines executing this task
 	numWorker int
 	logger    *slog.Logger
@@ -27,8 +27,8 @@ type EventBreakerWorker[T []K, K any] struct {
 }
 
 // NewEventBreakerWorker created this worker. Receives: Worker Name, Number of goroutines to execute, logger and metrics
-func NewEventBreakerWorker[T []K, K any](name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker[T, K] {
-	w := new(EventBreakerWorker[T, K])
+func NewEventBreakerWorker[I []O, O any](name string, numWorker int, logger *slog.Logger, metric metrics.Metric) *EventBreakerWorker[I, O] {
+	w := new(EventBreakerWorker[I, O])
 
 	w.name = name
 	w.numWorker = numWorker
@@ -39,31 +39,31 @@ func NewEventBreakerWorker[T []K, K any](name string, numWorker int, logger *slo
 	return w
 }
 
-func (w *EventBreakerWorker[T, K]) Name() string {
+func (w *EventBreakerWorker[I, O]) Name() string {
 	return w.name
 }
 
-func (w *EventBreakerWorker[T, K]) Started() bool {
+func (w *EventBreakerWorker[I, O]) Started() bool {
 	return w.started
 }
 
-func (w *EventBreakerWorker[T, K]) InputCh() chan *WorkerData[T] {
+func (w *EventBreakerWorker[I, O]) InputCh() chan *WorkerData[I] {
 	return w.Input
 }
 
-func (w *EventBreakerWorker[T, K]) OutputCh() chan *WorkerData[K] {
+func (w *EventBreakerWorker[I, O]) OutputCh() chan *WorkerData[O] {
 	return w.Output
 }
 
-func (w *EventBreakerWorker[T, K]) AddOutputCh(o chan *WorkerData[K]) {
+func (w *EventBreakerWorker[I, O]) AddOutputCh(o chan *WorkerData[O]) {
 	w.Output = o
 }
 
-func (w *EventBreakerWorker[T, K]) AddInputCh(i chan *WorkerData[T]) {
+func (w *EventBreakerWorker[I, O]) AddInputCh(i chan *WorkerData[I]) {
 	w.Input = i
 }
 
-func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
+func (w *EventBreakerWorker[I, O]) Start(ctx context.Context) {
 	w.logger.Info("starting event breaker worker", "worker_name", w.name)
 
 	for i := 0; i < w.numWorker; i++ {
@@ -79,7 +79,7 @@ func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
 					for _, v := range msgIn.Data {
 						go w.metric.ProducedMessage(w.name)
 
-						w.Output <- &WorkerData[K]{Data: v, Metadata: msgIn.Metadata}
+						w.Output <- &WorkerData[O]{Data: v, Metadata: msgIn.Metadata}
 					}
 				case <-w.closeCh:
 					return
@@ -89,7 +89,7 @@ func (w *EventBreakerWorker[T, K]) Start(ctx context.Context) {
 	}
 }
 
-func (w *EventBreakerWorker[T, K]) Stop(ctx context.Context) {
+func (w *EventBreakerWorker[I, O]) Stop(ctx context.Context) {
 	w.logger.Info("Stopping Worker", "worker_name", w.name)
 
 	close(w.closeCh)
