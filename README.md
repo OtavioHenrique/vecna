@@ -58,7 +58,7 @@ Vecna already comes with a solid set of logs needed to debug and monitor and wit
 
 You can use the `metrics.PromMetrics`, just instantiate using `metrics.NewPromMetrics()` and register each metric on your Prometheus registry.
 
-```
+```go
 vecnaMetrics := metrics.NewPromMetrics()
 prometheus.NewRegistry().MustRegister(
     vecnaMetrics.EnqueuedMsgs,
@@ -196,7 +196,7 @@ Run(context.Context, T, map[string]interface{}, string) (K, error)
 
 All workers will consume its input channel (except producer worker which produces on it), you're able to put any message on it that your worker will read, this allows you to migrate or put a vector pipeline inside your application.
 
-```
+```go
 type MyInput struct {
     Path string
 }
