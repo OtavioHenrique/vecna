@@ -8,6 +8,10 @@ Vecna is a tiny library to build high concurrent applications easily and focusin
 
 **Batteries Included!**
 
+```
+go get github.com/OtavioHenrique/vecna
+```
+
 ### How it works
 
 Vecna is based on two abstractions, `workers` and `tasks`. 
