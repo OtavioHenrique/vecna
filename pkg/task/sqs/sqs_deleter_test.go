@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/otaviohenrique/vecna/pkg/task"
 	"github.com/otaviohenrique/vecna/pkg/task/sqs"
 )
 
@@ -97,7 +98,7 @@ func TestSQSDeleter_Run(t *testing.T) {
 				t.Errorf("SQSDeleter.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && got != nil {
+			if !tt.wantErr && (got != task.Nullable{}) {
 				t.Errorf("SQSDeleter.Run() = %v, want %v", got, nil)
 			}
 		})

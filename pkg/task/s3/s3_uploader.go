@@ -8,10 +8,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/otaviohenrique/vecna/pkg/task"
 )
 
 // S3Uploader is a task which will upload a given data on the given path (key) of one bucket
-type S3Uploader[I *S3UploaderInput, O []byte] struct {
+type S3Uploader[I *S3UploaderInput, O task.Nullable] struct {
 	// S3 AWS client to be used
 	client s3iface.S3API
 	// Bucket name where all objects will be stored
@@ -28,7 +29,7 @@ type S3UploaderInput struct {
 	Content []byte
 }
 
-func NewS3Uploader[I *S3UploaderInput, O []byte](client s3iface.S3API, bucketName string, logger *slog.Logger) *S3Uploader[I, O] {
+func NewS3Uploader[I *S3UploaderInput, O task.Nullable](client s3iface.S3API, bucketName string, logger *slog.Logger) *S3Uploader[I, O] {
 	u := new(S3Uploader[I, O])
 
 	u.client = client
@@ -43,7 +44,7 @@ func NewS3Uploader[I *S3UploaderInput, O []byte](client s3iface.S3API, bucketNam
 func (s *S3Uploader[I, O]) Run(_ context.Context, input I, meta map[string]interface{}, _ string) (O, error) {
 	err := s.uploadObject(input)
 
-	return nil, err
+	return O(task.Nullable{}), err
 }
 
 func (s *S3Uploader[T, K]) uploadObject(input *S3UploaderInput) error {
