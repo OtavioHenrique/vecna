@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/otaviohenrique/vecna/pkg/task"
 )
 
 type SQSDeleterOpts struct {
@@ -16,7 +17,7 @@ type SQSDeleterOpts struct {
 }
 
 // SQSDeleter will delete a message on SQS based on a given receiptHandle
-type SQSDeleter[I string, O []byte] struct {
+type SQSDeleter[I string, O task.Nullable] struct {
 	// SQS AWS Client to be used
 	client   sqsiface.SQSAPI
 	logger   *slog.Logger
@@ -24,7 +25,7 @@ type SQSDeleter[I string, O []byte] struct {
 	queueURL *string
 }
 
-func NewSQSDeleter[I string, O []byte](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSDeleterOpts) *SQSDeleter[I, O] {
+func NewSQSDeleter[I string, O task.Nullable](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSDeleterOpts) *SQSDeleter[I, O] {
 	c := new(SQSDeleter[I, O])
 
 	c.client = client
@@ -54,12 +55,12 @@ func (s *SQSDeleter[I, O]) Run(_ context.Context, input I, meta map[string]inter
 	_, err := s.deleteMessage(string(input))
 
 	if err != nil {
-		return nil, err
+		return O(task.Nullable{}), err
 	}
 
 	s.logger.Debug("sqs message deleted", "receiptHandle", string(input))
 
-	return nil, nil
+	return O(task.Nullable{}), nil
 }
 
 func (s *SQSDeleter[I, O]) deleteMessage(receipt string) (*sqs.DeleteMessageOutput, error) {

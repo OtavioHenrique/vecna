@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/otaviohenrique/vecna/pkg/task"
 )
 
 // SQS Producer  options
@@ -24,7 +25,7 @@ type SQSProducerInput struct {
 }
 
 // Simple generic task to produce messages to SQS
-type SQSProducer[I SQSProducerInput, O []byte] struct { //TODO nullable type
+type SQSProducer[I SQSProducerInput, O task.Nullable] struct { //TODO nullable type
 	// SQS AWS client to be used
 	client   sqsiface.SQSAPI
 	logger   *slog.Logger
@@ -32,7 +33,7 @@ type SQSProducer[I SQSProducerInput, O []byte] struct { //TODO nullable type
 	queueURL *string
 }
 
-func NewSQSProducer[I SQSProducerInput, O []byte](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSProducerOpts) *SQSProducer[I, O] {
+func NewSQSProducer[I SQSProducerInput, O task.Nullable](client sqsiface.SQSAPI, logger *slog.Logger, opts *SQSProducerOpts) *SQSProducer[I, O] {
 	p := new(SQSProducer[I, O])
 
 	p.client = client
@@ -68,5 +69,5 @@ func (c *SQSProducer[I, O]) Run(_ context.Context, i I, meta map[string]interfac
 		QueueUrl:          c.queueURL,
 	})
 
-	return nil, err
+	return O(task.Nullable{}), err
 }
