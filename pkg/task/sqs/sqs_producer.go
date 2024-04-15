@@ -25,7 +25,7 @@ type SQSProducerInput struct {
 }
 
 // Simple generic task to produce messages to SQS
-type SQSProducer[I SQSProducerInput, O task.Nullable] struct { //TODO nullable type
+type SQSProducer[I SQSProducerInput, O task.Nullable] struct {
 	// SQS AWS client to be used
 	client   sqsiface.SQSAPI
 	logger   *slog.Logger
