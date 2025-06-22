@@ -9,7 +9,7 @@ Vecna is a tiny library to build high concurrent applications easily and focusin
 **Batteries Included!**
 
 ```
-go get github.com/OtavioHenrique/vecna
+go get github.com/ovaladares/vecna
 ```
 
 ### How it works

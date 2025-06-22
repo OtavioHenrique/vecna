@@ -7,9 +7,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
-	"github.com/otaviohenrique/vecna/pkg/workers"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/workers"
 )
 
 type MockTaskBidirectional[T string, K string] struct{}

@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/task"
 )
 
 type SQSDeleterOpts struct {

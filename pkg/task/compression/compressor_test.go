@@ -11,7 +11,7 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
-	"github.com/otaviohenrique/vecna/pkg/task/compression"
+	"github.com/ovaladares/vecna/pkg/task/compression"
 )
 
 func CompressGzip2(s string) []byte {

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
-	"github.com/otaviohenrique/vecna/pkg/workers"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/workers"
 )
 
 type MockTaskProducer[T byte, K string] struct {

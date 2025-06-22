@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/workers"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/workers"
 )
 
 func TestEventBreakerWorker_Start(t *testing.T) {

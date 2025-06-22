@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/metrics"
 )
 
 // EventBreakerWorker transforms any given output from previous worker which is an array of data into multiple events to the next worker.

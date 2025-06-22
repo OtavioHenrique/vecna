@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/workers"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/workers"
 )
 
 type MockTaskConsumer[T string, K string] struct {

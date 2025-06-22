@@ -10,7 +10,7 @@ import (
 
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/otaviohenrique/vecna/pkg/task/s3"
+	"github.com/ovaladares/vecna/pkg/task/s3"
 )
 
 func readToString(rs io.ReadSeeker) (string, error) {

@@ -1,4 +1,4 @@
-module github.com/otaviohenrique/vecna
+module github.com/ovaladares/vecna
 
 go 1.22.2
 

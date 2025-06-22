@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task"
 )
 
 // Consumer worker is a worker than simply consumes from a channel and executes tasks passing the input

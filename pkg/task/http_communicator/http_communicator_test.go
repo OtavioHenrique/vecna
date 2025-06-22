@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	httpcommunicator "github.com/otaviohenrique/vecna/pkg/task/http_communicator"
+	httpcommunicator "github.com/ovaladares/vecna/pkg/task/http_communicator"
 )
 
 func TestHTTPCommunicator_Run(t *testing.T) {

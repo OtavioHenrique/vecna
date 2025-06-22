@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/otaviohenrique/vecna/pkg/task/sqs"
+	"github.com/ovaladares/vecna/pkg/task/sqs"
 )
 
 type MockSQSProducer struct {

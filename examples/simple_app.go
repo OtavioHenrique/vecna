@@ -12,11 +12,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	awsSqs "github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task/compression"
-	"github.com/otaviohenrique/vecna/pkg/task/s3"
-	"github.com/otaviohenrique/vecna/pkg/task/sqs"
-	"github.com/otaviohenrique/vecna/pkg/workers"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task/compression"
+	"github.com/ovaladares/vecna/pkg/task/s3"
+	"github.com/ovaladares/vecna/pkg/task/sqs"
+	"github.com/ovaladares/vecna/pkg/workers"
 )
 
 type MockSQSMessage struct {
