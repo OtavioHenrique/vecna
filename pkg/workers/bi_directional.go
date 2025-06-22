@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task"
 )
 
 // BiDirectionalWorker is a worker that receives input from a channel and put outputs on a channel

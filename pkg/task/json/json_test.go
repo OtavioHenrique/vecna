@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/otaviohenrique/vecna/pkg/task/json"
+	"github.com/ovaladares/vecna/pkg/task/json"
 )
 
 type TestStructJson struct {

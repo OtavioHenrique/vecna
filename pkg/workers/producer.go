@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/otaviohenrique/vecna/pkg/metrics"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/metrics"
+	"github.com/ovaladares/vecna/pkg/task"
 )
 
 // Producer worker is a worker than simply produces messages on channel based on a empty execution of the given Task

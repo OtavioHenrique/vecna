@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/otaviohenrique/vecna/pkg/task"
+	"github.com/ovaladares/vecna/pkg/task"
 )
 
 // S3Uploader is a task which will upload a given data on the given path (key) of one bucket
